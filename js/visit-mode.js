@@ -16,8 +16,8 @@
   document.head.appendChild(st);
 
   // 2) Chặn phím tương tác. Giữ WASD / chuột / Shift để đi lại.
-  //    E đọc-nói chuyện · J nhiệm vụ · R chụp ảnh · F,Q,Enter hành động · số 1-9 túi đồ
-  const BLOCK=/^(KeyE|KeyJ|KeyR|KeyF|KeyQ|Enter|NumpadEnter|Digit[0-9]|Numpad[0-9]|Tab)$/;
+  //    E đọc-nói chuyện · J nhiệm vụ · F,Q,Enter hành động. (R chụp ảnh của game 1 bị thay bằng R nạp đạn)
+  const BLOCK=/^(KeyE|KeyJ|KeyF|KeyQ|Enter|NumpadEnter|Tab)$/;   // R (nạp đạn) và phím số (đổi súng) do visit-kit.js xử lý
   const stop=e=>{if(BLOCK.test(e.code)){e.preventDefault();e.stopImmediatePropagation()}};
   addEventListener('keydown',stop,true);addEventListener('keyup',stop,true);
 
@@ -61,7 +61,7 @@
 
   // 4) Huy hiệu
   addEventListener('load',()=>{
-    const d=document.createElement('div');d.id='visitTag';d.textContent='🌐 Chế độ tham quan · phím C hoặc lăn chuột: góc nhìn thứ 3';document.body.appendChild(d);
+    const d=document.createElement('div');d.id='visitTag';d.textContent='🌐 Tham quan · C: góc nhìn · 1-4: súng · R: nạp · Space: nhảy · Shift: lướt';document.body.appendChild(d);
   });
 
   // 5) Góc nhìn thứ 3 bằng phím C (game 1 vốn đã có: lăn chuột đổi khoảng cách camera, camBack > 0.6 là hiện nhân vật)
@@ -79,6 +79,7 @@
       if(avatar)scene.remove(avatar);
       const g=new THREE.Group();g.scale.setScalar(0.9);g.visible=false;scene.add(g);   // 0.9: lính cao ~2.0m cho vừa với thành phố
       const m=Soldier.make(CHAR);g.add(m.g);
+      if(window.VisitKit)VisitKit.attach(m,CHAR);   // súng cầm / đeo, tay, tầm nhìn thứ nhất (visit-kit.js)
       m.g.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});
       const spr=new THREE.Sprite(new THREE.SpriteMaterial({transparent:true,opacity:0}));spr.visible=false;g.add(spr);   // loop.js vẫn chỉnh bảng tên: để một sprite ẩn cho nó chỉnh
       avatar=g;aParts={armL:m.armL,armR:m.armR,legL:m.legL,legR:m.legR,spr:spr};
@@ -86,14 +87,12 @@
     if(typeof applyWear==='function')applyWear=function(){};   // đồ đội / đeo của người chơi cũ không áp dụng cho lính
     buildAvatar();
   }
-  const sc=document.createElement('script');
-  sc.src='js/soldier.js';
-  sc.onload=()=>{
+  const load=(src,cb)=>{const e=document.createElement('script');e.src=src;e.onload=cb;e.onerror=()=>console.warn('[visit] không tải được '+src);document.body.appendChild(e)};
+  load('js/soldier.js',()=>load('js/visit-kit.js',()=>{
     const t0=Date.now(),id=setInterval(()=>{
-      if(typeof scene!=='undefined'&&scene&&typeof buildAvatar==='function'&&typeof avatar!=='undefined'&&avatar&&window.Soldier){
+      if(typeof scene!=='undefined'&&scene&&typeof renderer!=='undefined'&&renderer&&typeof camera!=='undefined'&&camera&&typeof buildAvatar==='function'&&typeof avatar!=='undefined'&&avatar&&window.Soldier&&window.VisitKit){
         clearInterval(id);try{installSoldier()}catch(e){console.warn('[visit] không dựng được lính:',e)}
       }else if(Date.now()-t0>40000)clearInterval(id);   // chờ tối đa 40s cho thành phố dựng xong
     },300);
-  };
-  document.body.appendChild(sc);
+  }));
 })();
