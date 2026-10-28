@@ -413,5 +413,9 @@ function build(def){
 }
 
 
-window.Soldier={list:CH,make:function(k){return build(BYK[k]||CH[0])}};
+window.Soldier={list:CH,VB:VB,
+  make:function(k){return build(BYK[k]||CH[0])},
+  // tay áo / màu da / găng cho góc nhìn thứ nhất (giống CharPick.fp() của game 2)
+  fp:function(k){const c=BYK[k]||CH[0];return {sleeve:camoFn(c.uni.pal,c.uni.kind,c.uni.seed,1.7),skin:[c.skin,shade(c.skin,.95)],glove:c.glove}}
+};
 })();
