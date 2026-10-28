@@ -1,0 +1,4 @@
+/* responsive.css */
+@media(max-width:520px){
+  #hotbar{gap:6px} #hotbar .slot{width:46px;height:46px;font-size:21px;border-radius:12px}
+}

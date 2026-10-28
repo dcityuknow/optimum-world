@@ -1,0 +1,27 @@
+/* code-lock.css */
+#codeP{position:fixed;inset:0;z-index:44;display:none;align-items:center;justify-content:center;padding:18px;
+  background:rgba(18,21,26,.72);backdrop-filter:blur(6px)}
+#codeP .cc{width:min(580px,100%);background:#26292E;border-radius:24px;padding:26px 20px 20px;text-align:center;
+  box-shadow:0 30px 80px rgba(0,0,0,.5);color:#FFFBFB}
+#codeP.shake .cc{animation:cShake .42s ease}
+@keyframes cShake{0%,100%{transform:none}20%{transform:translateX(-10px)}40%{transform:translateX(9px)}60%{transform:translateX(-6px)}80%{transform:translateX(4px)}}
+#codeT{font-size:26px;font-weight:800;letter-spacing:-.02em;margin:0 0 6px}
+#codeS{font-size:14.5px;color:#B0BED1;margin:0 0 20px}
+#codeSlots{display:flex;gap:8px;justify-content:center;margin-bottom:22px}
+#codeSlots .slot{width:50px;height:62px;border-radius:8px;border:2px dashed rgba(211,219,226,.32);display:flex;
+  align-items:center;justify-content:center;font:900 40px/1 Impact,Haettenschweiler,'Arial Narrow Bold','Arial Black',sans-serif;color:#141518}
+#codeSlots .slot.on{border:0;background:#F3F1EC;animation:slotIn .2s ease both}
+@keyframes slotIn{from{transform:scale(.7)}to{transform:none}}
+#codeTiles{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;margin-bottom:10px;filter:drop-shadow(0 6px 12px rgba(0,0,0,.45))}
+#codeTiles .pt{cursor:pointer;transition:opacity .15s ease}
+#codeTiles .pt.used{opacity:.14;pointer-events:none}
+#codeMsg{min-height:22px;font-size:14.5px;font-weight:600;color:#FEA158;margin:6px 0 12px}
+#codeP .row{display:flex;gap:10px;justify-content:center}
+#codeP .row button{border:0;border-radius:999px;padding:13px 24px;font-size:14px;font-weight:700;cursor:pointer}
+#codeClr{background:rgba(255,251,251,.14);color:#FFFBFB}
+#codeX{background:#FFFBFB;color:#282C34}
+@media(max-width:480px){
+  #codeSlots{gap:5px} #codeSlots .slot{width:38px;height:48px;font-size:31px}
+  #codeTiles{gap:5px} #codeTiles .pt{width:36px;height:46px;font-size:30px}
+  #codeSlots .slot{width:36px;height:46px;font-size:30px}
+}

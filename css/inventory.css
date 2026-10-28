@@ -1,0 +1,17 @@
+/* inventory.css */
+#hotbar{display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:14px;z-index:13;
+  gap:8px;pointer-events:auto}
+#hotbar .slot{width:56px;height:56px;border-radius:14px;background:rgba(255,251,251,.92);
+  box-shadow:0 4px 14px rgba(40,44,52,.24);display:flex;align-items:center;justify-content:center;
+  position:relative;cursor:pointer;font-size:26px;line-height:1}
+#hotbar .slot.on{outline:3px solid var(--lavender);background:#fff}
+#hotbar .slot b{position:absolute;top:3px;left:6px;font-size:11px;color:#6B7480;font-weight:700}
+#mapView{display:none;position:fixed;inset:0;z-index:40;background:rgba(20,24,30,.82);
+  align-items:center;justify-content:center;padding:20px}
+#mapView .mapc{max-width:760px;width:100%;text-align:center}
+#mapView img{width:100%;border-radius:10px;box-shadow:0 18px 50px rgba(0,0,0,.5)}
+#mapView button{margin-top:14px;padding:12px 30px;border:0;border-radius:999px;
+  background:var(--alabaster);font-weight:700;font-size:16px;cursor:pointer}
+body.photo #hotbar{display:none !important}
+body.cine #hud,body.cine #hotbar,body.cine #prompt,body.cine #mini,
+body.cine #prog,body.cine #side,body.cine #touch{display:none !important}

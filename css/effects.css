@@ -1,0 +1,17 @@
+/* effects.css */
+/* final grade: a touch of vignette and film grain so the render stops looking
+   like a raw WebGL buffer. Pure CSS, so it costs nothing on the GPU budget. */
+
+#grade{position:fixed;inset:0;z-index:5;pointer-events:none;
+  background:radial-gradient(ellipse at 50% 46%, rgba(0,0,0,0) 46%, rgba(8,11,16,.20) 100%)}
+
+#grain{position:fixed;inset:-120px;z-index:6;pointer-events:none;opacity:.05;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/></filter><rect width='140' height='140' filter='url(%23n)'/></svg>");
+  animation:grainShift 700ms steps(4) infinite}
+@keyframes grainShift{
+  0%{transform:translate(0,0)}25%{transform:translate(-14px,8px)}
+  50%{transform:translate(9px,-11px)}75%{transform:translate(-7px,-6px)}
+  100%{transform:translate(0,0)}}
+body.photo #grade,body.photo #grain{opacity:0}
+/* an animated full screen layer is not worth a single frame on a phone */
+body.lite #grain{display:none}

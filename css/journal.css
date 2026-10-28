@@ -1,0 +1,40 @@
+/* journal.css */
+/* ---- the quest journal ---- */
+#jrnBtn{font-size:17px}
+#jrnBtn .kb{position:absolute;bottom:-6px;right:-8px;background:var(--midnight);color:var(--alabaster);
+  font-size:9.5px;font-weight:800;letter-spacing:.04em;padding:2px 6px;border-radius:8px;
+  border:1px solid rgba(255,251,251,.35);line-height:1.3}
+body.lite #jrnBtn .kb{display:none}
+#jrnDot{display:none;position:absolute;right:-3px;top:-3px;width:11px;height:11px;border-radius:50%;background:var(--peach);
+  border:2px solid #FFFBFB}
+#jrnP{position:fixed;inset:0;z-index:46;display:none;align-items:center;justify-content:center;padding:16px;
+  background:rgba(16,19,25,.45);animation:dFade .25s ease both}
+#jrnP .jc{width:min(520px,100%);max-height:min(86vh,760px);display:flex;flex-direction:column;background:rgba(255,251,251,.98);
+  border-radius:22px;padding:20px 18px 16px;box-shadow:0 22px 60px rgba(10,14,20,.45);animation:dRise .35s cubic-bezier(.16,.9,.3,1) both}
+#jrnP .jh{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:10px}
+#jrnT{margin:0;font-size:22px;font-weight:800;letter-spacing:-.02em;color:#22252B}
+#jrnN{font-size:13px;font-weight:700;color:#7C8A99}
+#jrnL{overflow-y:auto;flex:1 1 auto;margin:0 -6px;padding:0 6px;-webkit-overflow-scrolling:touch}
+#jrnL .jq{border:2px solid #E3E8EE;border-radius:14px;padding:11px 12px 10px;margin-bottom:8px;background:#fff}
+#jrnL .jq.active{border-color:#FEA158;background:#FFF8F1}
+#jrnL .jq.new{border-color:#51B1FE;background:#F3F9FF}
+#jrnL .jq.mini{border-color:#B87CFF;background:#FAF6FF}
+#jrnL .jq.done{background:#F7F9FB}
+#jrnL .jq.locked{background:#F7F9FB;opacity:.72}
+#jrnL .jtop{display:flex;align-items:center;justify-content:space-between;gap:10px}
+#jrnL .jtop b{font-size:15.5px;color:#22252B;line-height:1.25}
+#jrnL .jtag{flex:0 0 auto;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;border-radius:999px;padding:4px 9px;
+  background:#E9EDF2;color:#5D6B7A}
+#jrnL .active .jtag{background:#FEA158;color:#fff}
+#jrnL .new .jtag{background:#51B1FE;color:#fff}
+#jrnL .mini .jtag{background:#B87CFF;color:#fff}
+#jrnL .done .jtag{background:#64E27F;color:#123B1C}
+#jrnL .jw{font-size:12.5px;color:#7C8A99;margin-top:4px;line-height:1.4}
+#jrnL .js{font-size:14px;font-weight:650;color:#2E343C;margin-top:6px;line-height:1.4}
+#jrnL .jr{font-size:12.5px;color:#5D6B7A;margin-top:5px}
+#jrnL .done .jw,#jrnL .done .jr{display:none}
+#jrnK{font-size:12px;color:#9AA6B2;margin:8px 2px 8px;text-align:center}
+#jrnK:empty{display:none}
+#jrnX{width:100%;margin-top:2px;border:0;border-radius:14px;padding:13px 0;font-size:14px;font-weight:700;cursor:pointer;
+  background:#EEF1F5;color:#3E464F}
+body.photo #jrnBtn{display:none !important}

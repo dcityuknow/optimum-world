@@ -1,0 +1,116 @@
+/* onboarding.css */
+#start{position:fixed;inset:0;z-index:40;display:flex;flex-direction:column;justify-content:flex-end;
+  padding:0;overflow:hidden;background:transparent}
+#obShade{position:absolute;inset:0;pointer-events:none;transition:background 1.1s;
+  background:linear-gradient(180deg,rgba(18,21,26,.80) 0%,rgba(18,21,26,.86) 45%,rgba(18,21,26,.92) 100%)}
+#start.final #obShade{background:linear-gradient(180deg,rgba(18,21,26,.28) 0%,rgba(18,21,26,.40) 55%,rgba(18,21,26,.74) 100%)}
+
+#obWrap{position:relative;flex:1 1 auto;display:flex;align-items:center;
+  padding:40px clamp(24px,7vw,110px) 24px;min-height:0}
+.ob{display:none;animation:obIn .8s cubic-bezier(.16,.8,.3,1);width:100%;max-width:680px}
+.ob.on{display:block}
+@keyframes obIn{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
+#obWrap.p1,#obWrap.p2,#obWrap.p3{align-items:center;justify-content:flex-start}
+#obWrap.p4{align-items:center;justify-content:center;text-align:center}
+#obWrap.p5{align-items:center;justify-content:center;text-align:center}
+#obWrap.p4 .setup{margin-left:auto;margin-right:auto}
+.obk{font-size:11px;letter-spacing:.44em;color:rgba(211,219,226,.5);margin-bottom:16px;font-weight:700}
+.ob h1{margin:0 0 18px;font-size:clamp(34px,6.4vw,62px);line-height:1.0;letter-spacing:-.042em;
+  color:var(--alabaster);font-weight:800;text-shadow:0 8px 40px rgba(0,0,0,.6);max-width:15em}
+.ob .lead{margin:0 0 16px;font-size:clamp(16px,2.2vw,20px);line-height:1.55;color:#E4EAF0;max-width:28em;font-weight:500}
+.ob .note{margin:0;font-size:14px;line-height:1.6;color:rgba(211,219,226,.62);max-width:30em}
+#obWrap.p4 .ob h1,#obWrap.p4 .ob .lead,#obWrap.p4 .ob .note{margin-left:auto;margin-right:auto}
+.obnote{margin:14px 0 0;font-size:13px;line-height:1.5;color:rgba(211,219,226,.72);
+  border-left:2px solid var(--mint);padding-left:12px}
+.obnote.ok{border-color:var(--mint);color:rgba(100,226,127,.9)}
+.obl{margin:26px 0 12px;font-size:11px;letter-spacing:.32em;text-transform:uppercase;color:rgba(211,219,226,.55)}
+.obul{list-style:none;padding:0;margin:26px 0 0;max-width:30em}
+.obul li{display:flex;align-items:center;gap:15px;margin-bottom:12px}
+.obul .kk{flex:0 0 auto;min-width:82px;text-align:center;font-family:ui-monospace,Menlo,monospace;
+  font-size:13px;font-weight:700;color:var(--alabaster);background:rgba(255,251,251,.12);
+  border:1px solid rgba(255,251,251,.32);border-radius:11px;padding:9px 13px}
+.obul em{font-style:normal;font-size:16px;color:#E4EAF0}
+#langRow{display:flex;gap:8px;flex-wrap:wrap;max-width:560px}
+#obWrap.p4 #langRow{justify-content:center}
+#langRow button{cursor:pointer;border:1px solid rgba(255,251,251,.32);background:rgba(255,251,251,.08);
+  color:#E4EAF0;border-radius:999px;padding:11px 18px;font-size:13px;font-weight:700;letter-spacing:.1em}
+#langRow button.on{background:var(--alabaster);color:var(--midnight);border-color:var(--alabaster)}
+.setup{display:flex;align-items:center;gap:14px;margin:26px auto 18px;width:min(520px,100%)}
+#avatarPick{width:82px;height:82px;border-radius:26px;cursor:pointer;overflow:hidden;flex:0 0 auto;
+  border:2px dashed rgba(211,219,226,.5);background:rgba(255,255,255,.06);
+  display:flex;align-items:center;justify-content:center;font-size:28px;color:rgba(211,219,226,.65)}
+#avatarPick img{width:100%;height:100%;object-fit:cover}
+#nickInput{flex:1 1 auto;min-width:0;padding:17px;font-size:16px;border-radius:15px;text-align:left;
+  border:1px solid rgba(255,251,251,.28);background:rgba(255,251,251,.08);color:var(--alabaster);outline:none}
+#nickInput::placeholder{color:rgba(211,219,226,.48)}
+/* columns as wide as their longest chip, so a long name is never clipped
+   and loses its colour dot, and the whole block centred */
+#roleRow{display:grid;grid-template-columns:repeat(4,max-content);gap:8px;
+  justify-content:center;width:max-content;max-width:100%;margin:0 auto 16px}
+#roleRow button{width:100%}
+#roleRow button{justify-content:center;white-space:nowrap}
+.need{border-color:#FF7A6B !important;box-shadow:0 0 0 2px rgba(255,122,107,.35) !important}
+#roleRow button{cursor:pointer;display:flex;align-items:center;gap:8px;border-radius:999px;
+  border:1px solid rgba(255,251,251,.24);background:rgba(255,251,251,.07);color:#E4EAF0;
+  padding:9px 15px;font-size:13px;font-weight:700}
+#roleRow button i{width:9px;height:9px;border-radius:50%;display:block}
+#roleRow button.on{background:rgba(255,251,251,.94);color:var(--midnight);border-color:transparent}
+#bioInput,#xInput{width:min(520px,100%);padding:15px 16px;font-size:15px;border-radius:14px;text-align:center;
+  border:1px solid rgba(255,251,251,.26);background:rgba(255,251,251,.07);color:var(--alabaster);
+  outline:none;margin-bottom:16px}
+#xInput{max-width:none}
+#bioInput::placeholder,#xInput::placeholder{color:rgba(211,219,226,.45)}
+.ob5in{position:relative;padding:52px 64px 58px;border-radius:34px;
+  background:radial-gradient(120% 130% at 50% 45%,rgba(14,17,21,.86) 0%,rgba(14,17,21,.66) 55%,rgba(14,17,21,0) 100%)}
+.obbig{font-size:clamp(42px,10vw,84px);letter-spacing:-.05em;font-weight:800;color:var(--alabaster);
+  line-height:.98;text-shadow:0 4px 12px rgba(0,0,0,.85),0 14px 60px rgba(0,0,0,.75)}
+.obsub{margin-top:14px;font-size:12px;letter-spacing:.36em;text-transform:uppercase;color:rgba(226,233,240,.9);
+  text-shadow:0 2px 10px rgba(0,0,0,.9)}
+#enterBig{margin-top:34px;cursor:pointer;border:none;border-radius:999px;padding:20px 52px;
+  font-size:17px;font-weight:800;letter-spacing:.01em;background:var(--alabaster);color:var(--midnight);
+  box-shadow:0 18px 50px rgba(0,0,0,.45)}
+#obBar{position:relative;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:16px 20px calc(20px + env(safe-area-inset-bottom));flex-wrap:nowrap}
+#obDots{display:flex;gap:7px}
+#obDots i{width:7px;height:7px;border-radius:50%;background:rgba(255,251,251,.3);transition:all .35s}
+#obDots i.on{background:var(--alabaster);width:24px;border-radius:4px}
+.obBtns{display:flex;gap:10px;align-items:center}
+#obSkip{cursor:pointer;border:none;background:transparent;color:rgba(211,219,226,.6);
+  font-size:13.5px;font-weight:600;padding:14px 12px}
+#obBack{cursor:pointer;border:1px solid rgba(255,251,251,.3);background:rgba(255,251,251,.06);
+  color:#E4EAF0;border-radius:999px;padding:14px 24px;font-size:14px;font-weight:700}
+#enter{cursor:pointer;border:none;border-radius:999px;padding:15px 30px;font-size:15px;font-weight:700;
+  background:var(--alabaster);color:var(--midnight);box-shadow:0 14px 40px rgba(0,0,0,.35);white-space:nowrap;flex:0 0 auto}
+.obBtns{flex:0 0 auto}
+@media (max-width:620px){
+  #obWrap{padding:22px 20px 0}
+  #obBar{padding:12px 14px calc(16px + env(safe-area-inset-bottom));gap:8px}
+  #obDots{display:none}
+  .obBtns{width:100%;justify-content:space-between}
+  #enter{padding:15px 26px;font-size:14.5px}
+  #obBack{padding:13px 20px;font-size:13.5px}
+  #obSkip{padding:13px 6px;font-size:13px}
+  .ob h1{font-size:clamp(28px,8.4vw,44px)}
+  .ob .lead{font-size:15.5px}
+  .obul{margin-top:18px}
+  .obul li{margin-bottom:9px;gap:11px}
+  .obul .kk{min-width:66px;padding:8px 10px;font-size:12px}
+  .obul em{font-size:14px}
+  #langRow button{padding:10px 14px;font-size:12px}
+  #roleRow{grid-template-columns:repeat(2,max-content)}
+  #roleRow button{padding:8px 12px;font-size:12px}
+}
+
+.setup{display:flex;align-items:center;gap:14px;margin-bottom:24px}
+#avatarPick{width:74px;height:74px;border-radius:50%;cursor:pointer;overflow:hidden;flex:0 0 auto;
+  border:2px dashed rgba(157,176,194,.9);background:rgba(255,255,255,.7);
+  display:flex;align-items:center;justify-content:center;font-size:26px;color:#9DB0C2}
+#avatarPick img{width:100%;height:100%;object-fit:cover}
+#nickInput{flex:1 1 auto;min-width:0;padding:15px 16px;font-size:15px;border-radius:12px;
+  border:1px solid rgba(157,176,194,.7);background:rgba(255,255,255,.85);color:var(--midnight);outline:none}
+#nickInput::placeholder{color:#9DB0C2}
+
+#langRow{display:flex;gap:8px;margin-bottom:18px}
+#langRow button{cursor:pointer;border:1px solid rgba(157,176,194,.7);background:rgba(255,255,255,.75);
+  color:#5D6B7A;border-radius:999px;padding:9px 16px;font-size:12.5px;font-weight:700;letter-spacing:.06em}
+#langRow button.on{background:var(--midnight);color:var(--alabaster);border-color:var(--midnight)}
