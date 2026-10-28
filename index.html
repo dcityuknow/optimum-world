@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Optimum World</title>
+<link rel="icon" type="image/png" href="assets/images/icons/favicon.png" />
+<link rel="apple-touch-icon" href="assets/images/icons/apple-touch-icon.png" />
+<meta name="theme-color" content="#282C34" />
+<meta name="description" content="Optimum World: a walkable city built around Optimum, the universal data acceleration network." />
+<meta property="og:title" content="Optimum World" />
+<meta property="og:description" content="Walk the city. Meet the team. Take a photo." />
+<meta name="twitter:card" content="summary_large_image" />
+
+
+<link rel="stylesheet" href="css/base.css" />
+<link rel="stylesheet" href="css/onboarding.css" />
+<link rel="stylesheet" href="css/dialogue.css" />
+<link rel="stylesheet" href="css/inventory.css" />
+<link rel="stylesheet" href="css/beer.css" />
+<link rel="stylesheet" href="css/fishing.css" />
+<link rel="stylesheet" href="css/effects.css" />
+<link rel="stylesheet" href="css/hud-controls.css" />
+<link rel="stylesheet" href="css/modals.css" />
+<link rel="stylesheet" href="css/photo-mode.css" />
+<link rel="stylesheet" href="css/touch.css" />
+<link rel="stylesheet" href="css/wardrobe.css" />
+<link rel="stylesheet" href="css/journal.css" />
+<link rel="stylesheet" href="css/ride.css" />
+<link rel="stylesheet" href="css/quests.css" />
+<link rel="stylesheet" href="css/code-lock.css" />
+<link rel="stylesheet" href="css/responsive.css" />
+</head>
+<body>
+
+<div id="dlg"><div class="dwrap">
+  <div class="dcard">
+    <div class="dportrait"><img id="dPic" alt=""><span id="dRing"></span></div>
+    <div class="dbody">
+      <div class="dhead"><span id="dName"></span><b id="dRole"></b></div>
+      <p id="dText"></p>
+      <div id="dChoices"></div>
+    </div>
+  </div>
+</div></div>
+<div id="hotbar"></div>
+<div id="mapView"><div class="mapc"><img id="mapImg" alt=""><button id="mapX">OK</button></div></div>
+<div id="grade"></div>
+<div id="grain"></div>
+<canvas id="mini" width="208" height="208"></canvas>
+<div id="prog"></div>
+<div id="sky">Day</div>
+<button class="sqBtn" id="sndBtn">&#9834;</button>
+<button class="sqBtn" id="langBtn">EN</button>
+<button class="sqBtn" id="menuBtn">&#9776;</button>
+<button class="sqBtn" id="viewBtn">&#128100;</button>
+<button class="sqBtn" id="jrnBtn">&#128220;<i id="jrnDot"></i><span class="kb" id="jrnKb">J</span></button>
+<button id="runBtn">RUN</button>
+<button id="hitBtn">&#9876;</button>
+<div id="hud">
+  <div id="crosshair"></div>
+  <div id="zone">Location<b>Crossroads</b></div>
+  <div id="compass">WASD to move</div>
+  <div id="prompt"><kbd>E</kbd><span id="promptText">Read</span></div>
+</div>
+
+<div id="stick"><div id="knob"></div></div>
+<div id="act">READ</div>
+
+<div id="panel">
+  <div id="card">
+    <div id="cPic"><img id="cAvatarImg" alt="" /></div>
+    <div class="eyebrow" id="cEyebrow">Optimum City</div>
+    <h2 id="cTitle">Title</h2>
+    <div class="rule" id="cRule"></div>
+    <div id="cBody"></div>
+    <div id="cPlot">
+      <input id="plotTitle" placeholder="Title of your work" maxlength="42" />
+      <div class="prow">
+        <label class="pUp" for="plotFile">Upload a picture<input type="file" id="plotFile" accept="image/*" hidden /></label>
+        <button class="pDel" id="plotClear">Remove</button>
+      </div>
+      <div class="phint">Saved on this device. The signature uses your nickname.</div>
+    </div>
+    <div class="links" id="cLinks"></div>
+    <button id="close">Close</button>
+  </div>
+</div>
+
+<div id="start">
+  <div id="obShade"></div>
+  <div id="obWrap">
+    <div class="ob" id="ob1">
+      <div class="obk">01</div>
+      <h1 id="s1t">Welcome to Optimum World</h1>
+      <p class="lead" id="s1s"></p>
+      <div class="obl" id="s1p"></div>
+      <div id="langRow"></div>
+    </div>
+
+    <div class="ob" id="ob2">
+      <div class="obk">02</div>
+      <h1 id="s2t"></h1>
+      <p class="lead" id="s2s"></p>
+      <ul class="obul">
+        <li><span class="kk" id="k2a">W A S D</span><em id="s2a"></em></li>
+        <li><span class="kk" id="k2b">Mouse</span><em id="s2b"></em></li>
+        <li><span class="kk">Shift</span><em id="s2e"></em></li>
+        <li><span class="kk">E</span><em id="s2c"></em></li>
+        <li><span class="kk">Esc</span><em id="s2d"></em></li>
+      </ul>
+    </div>
+
+    <div class="ob" id="ob3">
+      <div class="obk">03</div>
+      <h1 id="s3t"></h1>
+      <p class="lead" id="s3s"></p>
+      <ul class="obul">
+        <li><span class="kk">R</span><em id="s3a"></em></li>
+        <li><span class="kk">Zoom</span><em id="s3b"></em></li>
+        <li><span class="kk">Space</span><em id="s3c"></em></li>
+      </ul>
+    </div>
+
+    <div class="ob" id="ob4">
+      <div class="obk">04</div>
+      <h1 id="s4t"></h1>
+      <p class="lead" id="s4s"></p>
+      <div class="setup">
+        <label id="avatarPick"><input type="file" id="avatarFile" accept="image/*" hidden><span id="avatarPrev">+</span></label>
+        <input id="nickInput" placeholder="Your nickname" maxlength="18" />
+      </div>
+      <div class="obl" id="s4r"></div>
+      <div id="roleRow"></div>
+      <input id="bioInput" maxlength="90" placeholder="A line about you" />
+      <input id="xInput" maxlength="60" placeholder="@yourhandle" />
+      <div class="obnote" id="s4note"></div>
+    </div>
+
+    <div class="ob" id="ob5"><div class="ob5in">
+      <div class="obbig">Optimum World</div>
+      <div class="obsub" id="startSub">Data movement sets the ceiling</div>
+      <button id="enterBig">Enter the world</button>
+      <div class="keys" id="startKeys" style="display:none"></div>
+    </div></div>
+  </div>
+
+  <div id="obBar">
+    <div id="obDots"><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="obBtns">
+      <button id="obBack">Back</button>
+      <button id="obSkip">Skip</button>
+      <button id="enter">Continue</button>
+    </div>
+  </div>
+</div>
+
+<button id="photoBtn">&#128247;<span class="kb" id="photoKey">R</span></button>
+
+<div id="vf">
+  <div class="vfc tl"></div><div class="vfc tr"></div><div class="vfc bl"></div><div class="vfc br"></div>
+  <div id="vfRing"><div id="vfCross"></div></div>
+  <div id="vfTop"><span id="vfRec"><i></i>REC</span><span id="vfZoom">1.0x</span></div>
+  <div id="vfBot"><span id="vfMode">POV</span><span id="vfIso">ISO 200</span></div>
+</div>
+
+<div id="photoBar">
+  <div id="photoHint"></div>
+  <div class="pbRow">
+    <button class="pbGhost" id="pbExit">Back</button>
+    <button class="pbGhost" id="pbPov">POV</button>
+    <button class="pbMain" id="pbShot">Capture</button>
+    <button class="pbGhost" id="pbEdit">Avatar</button>
+    <button class="pbGhost" id="pbWard">Wardrobe</button>
+  </div>
+</div>
+
+<div id="shot">
+  <img id="shotImg" alt="" />
+  <div class="row">
+    <button class="pbMain" id="shotSave">Save photo</button>
+    <button class="pbGhost" id="shotX" style="display:none">Post on X</button>
+    <button class="pbGhost" id="shotClose">Close</button>
+  </div>
+  <div class="hint"></div>
+</div>
+
+<div id="intro"></div>
+
+<div id="menu"><div class="mc">
+  <h3 id="mTitle">Menu</h3>
+  <div id="mProg"></div>
+  <div class="mrow" id="mLang"></div>
+  <div class="mrow"><button id="mSound">Sound on</button><button id="mAvatar">Avatar</button></div>
+  <div class="mrow"><button id="mGfx">Graphics</button><button id="mHow">How to play</button></div>
+  <div class="mrow"><button id="mJrn">Quests</button><button id="mWard">Wardrobe</button></div>
+  <div class="mrow"><button id="mReset">Reset progress</button></div>
+  <div id="mKeys"></div>
+  <button id="mResume">Back to the world</button>
+</div></div>
+
+<div id="done"><div class="c"><h3 id="doneT">You walked the whole world</h3><p id="doneB"></p><button id="doneX">OK</button></div></div>
+<div id="wardP"><div class="wc"><h3 id="wardT">Wardrobe</h3><div id="wardL"></div><button id="wardX">Close</button></div></div>
+<div id="jrnP"><div class="jc"><div class="jh"><h3 id="jrnT">Quests</h3><span id="jrnN"></span></div><div id="jrnL"></div><p id="jrnK"></p><button id="jrnX">Close</button></div></div>
+<div id="rideHUD"><div class="rhTop"><div id="rhTime">0.0</div><div class="rhSub"><span id="rhPhase"></span>  <span id="rhSpeed"></span></div><div class="rhBal"><i id="rhBalI"></i></div><div id="rhBest"></div></div><div id="rhMsg"></div><div id="rhKey"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="48" class="bg"/><circle id="rhRing" cx="60" cy="60" r="48" class="fg"/></svg><div id="rhCap" class="cap"></div></div><div id="rhHint"></div><div id="rhPad"></div></div>
+<div id="rideRes"><div class="rc"><h3 id="rrT">Bulk!</h3><p id="rrHeld"></p><p id="rrBest"></p><p id="rrQuip"></p><div class="row"><button id="rrAgain"></button><button id="rrBoard"></button></div><button id="rrExit"></button></div></div>
+<div id="lbP"><div class="lc"><h3 id="lbT"></h3><div id="lbL"></div><button id="lbX"></button></div></div>
+<div id="qi"></div>
+<div id="qt"></div>
+<div id="qtoast"></div>
+<div id="codeP"><div class="cc"><h3 id="codeT">The code</h3><p id="codeS"></p><div id="codeSlots"></div><div id="codeTiles"></div><div id="codeMsg"></div><div class="row"><button id="codeClr">Clear</button><button id="codeX">Close</button></div></div></div>
+
+<div id="fish">
+  <div class="fc">
+    <div id="fishHead">Cast</div>
+    <div id="fishBar"><div id="fishZone"></div><div id="fishMark"></div></div>
+    <div id="fishFoot">Tap when the marker crosses the green</div>
+    <div id="fishTally"></div>
+    <button id="fishHit">STRIKE</button>
+    <button id="fishOut">Leave</button>
+  </div>
+</div>
+
+<div id="flash"></div>
+
+<div id="loading">Loading</div>
+
+
+<!-- third-party libraries -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<!-- game code: classic scripts that share one global scope, so the order matters -->
+<script src="js/config.js"></script>
+<script src="js/data/i18n.js"></script>
+<script src="js/data/community.js"></script>
+<script src="js/data/photos.js"></script>
+<script src="js/core/state.js"></script>
+<script src="js/core/textures.js"></script>
+<script src="js/core/surfaces.js"></script>
+<script src="js/net/roster.js"></script>
+<script src="js/world/sky.js"></script>
+<script src="js/core/materials.js"></script>
+<script src="js/core/helpers.js"></script>
+<script src="js/characters/skins.js"></script>
+<script src="js/characters/people.js"></script>
+<script src="js/characters/profile.js"></script>
+<script src="js/audio/sfx-bank.js"></script>
+<script src="js/ui/brand.js"></script>
+<script src="js/audio/sound.js"></script>
+<script src="js/audio/music.js"></script>
+<script src="js/gameplay/beer.js"></script>
+<script src="js/gameplay/fishing.js"></script>
+<script src="js/ui/progress.js"></script>
+<script src="js/ui/minimap.js"></script>
+<script src="js/ui/language.js"></script>
+<script src="js/core/quality.js"></script>
+<script src="js/world/gallery-plots.js"></script>
+<script src="js/world/exterior-styles.js"></script>
+<script src="js/world/exhibits.js"></script>
+<script src="js/world/team-rooms.js"></script>
+<script src="js/world/role-gear.js"></script>
+<script src="js/world/fish-cap.js"></script>
+<script src="js/world/pier.js"></script>
+<script src="js/world/sea.js"></script>
+<script src="js/world/wind.js"></script>
+<script src="js/world/season-dressing.js"></script>
+<script src="js/world/night-air.js"></script>
+<script src="js/world/building.js"></script>
+<script src="js/world/world.js"></script>
+<script src="js/gameplay/planting.js"></script>
+<script src="js/gameplay/dialogue.js"></script>
+<script src="js/gameplay/cinematics.js"></script>
+<script src="js/gameplay/quests.js"></script>
+<script src="js/gameplay/inventory.js"></script>
+<script src="js/quests/quest-text.js"></script>
+<script src="js/quests/community-quest.js"></script>
+<script src="js/quests/umpia.js"></script>
+<script src="js/quests/code-lock.js"></script>
+<script src="js/quests/vault.js"></script>
+<script src="js/quests/card.js"></script>
+<script src="js/quests/miretu.js"></script>
+<script src="js/ui/wardrobe.js"></script>
+<script src="js/quests/ping.js"></script>
+<script src="js/quests/sand.js"></script>
+<script src="js/quests/quest-ui.js"></script>
+<script src="js/ui/quest-journal.js"></script>
+<script src="js/gameplay/rodeo-intro.js"></script>
+<script src="js/gameplay/leaderboard.js"></script>
+<script src="js/gameplay/rodeo-ride.js"></script>
+<script src="js/world/afterparty.js"></script>
+<script src="js/gameplay/house.js"></script>
+<script src="js/gameplay/treasure.js"></script>
+<script src="js/core/init.js"></script>
+<script src="js/ui/onboarding.js"></script>
+<script src="js/core/input.js"></script>
+<script src="js/ui/panel.js"></script>
+<script src="js/core/loop.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
