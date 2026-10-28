@@ -9,7 +9,7 @@
   // 1) Ẩn mọi giao diện tương tác (id lấy từ index.html). Giữ lại: canvas, minimap, tên khu vực, la bàn, cần điều khiển cảm ứng, nút âm thanh / ngôn ngữ.
   const st=document.createElement('style');
   st.textContent=
-    '#menuBtn,#viewBtn,#jrnBtn,#runBtn,#hitBtn,#photoBtn,#hotbar,#prog,#prompt,#act,#qi,#qt,#qtoast,'+
+    '#menuBtn,#jrnBtn,#runBtn,#hitBtn,#photoBtn,#hotbar,#prog,#prompt,#act,#qi,#qt,#qtoast,'+
     '#dlg,#panel,#menu,#done,#wardP,#jrnP,#rideHUD,#rideRes,#lbP,#codeP,#fish,#shot,#photoBar,#vf,#mapView'+
     '{display:none!important}'+
     '#visitTag{position:fixed;left:12px;top:12px;z-index:99998;padding:6px 12px;border-radius:999px;background:rgba(20,20,30,.65);color:#fff;font:600 14px system-ui,sans-serif;pointer-events:none}';
@@ -61,6 +61,39 @@
 
   // 4) Huy hiệu
   addEventListener('load',()=>{
-    const d=document.createElement('div');d.id='visitTag';d.textContent='🌐 Chế độ tham quan';document.body.appendChild(d);
+    const d=document.createElement('div');d.id='visitTag';d.textContent='🌐 Chế độ tham quan · phím C hoặc lăn chuột: góc nhìn thứ 3';document.body.appendChild(d);
   });
+
+  // 5) Góc nhìn thứ 3 bằng phím C (game 1 vốn đã có: lăn chuột đổi khoảng cách camera, camBack > 0.6 là hiện nhân vật)
+  addEventListener('keydown',e=>{
+    if(e.code!=='KeyC'||e.repeat)return;
+    const t=e.target&&e.target.tagName;if(t==='INPUT'||t==='TEXTAREA')return;
+    camBack=camBack>0.6?0:3.2;
+  },true);
+
+  // 6) Nhân vật lính voxel của game 2 (from0tohero) thay cho người chơi mặc định.
+  //    Mã nhân vật lấy từ ?char=xx (game 2 tự gắn khi mở lỗ hổng). Mã lạ / thiếu -> lính Việt Nam (vn).
+  const CHAR=((new URLSearchParams(location.search).get('char')||'vn').replace(/[^a-z]/g,'').slice(0,4))||'vn';
+  function installSoldier(){
+    buildAvatar=function(){                      // ghi đè hàm dựng avatar của profile.js (cùng giao diện: avatar + aParts)
+      if(avatar)scene.remove(avatar);
+      const g=new THREE.Group();g.scale.setScalar(0.9);g.visible=false;scene.add(g);   // 0.9: lính cao ~2.0m cho vừa với thành phố
+      const m=Soldier.make(CHAR);g.add(m.g);
+      m.g.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});
+      const spr=new THREE.Sprite(new THREE.SpriteMaterial({transparent:true,opacity:0}));spr.visible=false;g.add(spr);   // loop.js vẫn chỉnh bảng tên: để một sprite ẩn cho nó chỉnh
+      avatar=g;aParts={armL:m.armL,armR:m.armR,legL:m.legL,legR:m.legR,spr:spr};
+    };
+    if(typeof applyWear==='function')applyWear=function(){};   // đồ đội / đeo của người chơi cũ không áp dụng cho lính
+    buildAvatar();
+  }
+  const sc=document.createElement('script');
+  sc.src='js/soldier.js';
+  sc.onload=()=>{
+    const t0=Date.now(),id=setInterval(()=>{
+      if(typeof scene!=='undefined'&&scene&&typeof buildAvatar==='function'&&typeof avatar!=='undefined'&&avatar&&window.Soldier){
+        clearInterval(id);try{installSoldier()}catch(e){console.warn('[visit] không dựng được lính:',e)}
+      }else if(Date.now()-t0>40000)clearInterval(id);   // chờ tối đa 40s cho thành phố dựng xong
+    },300);
+  };
+  document.body.appendChild(sc);
 })();
