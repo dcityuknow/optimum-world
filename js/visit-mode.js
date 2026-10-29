@@ -12,7 +12,7 @@
     '#menuBtn,#jrnBtn,#runBtn,#hitBtn,#photoBtn,#hotbar,#prog,#prompt,#act,#qi,#qt,#qtoast,'+
     '#dlg,#panel,#menu,#done,#wardP,#jrnP,#rideHUD,#rideRes,#lbP,#codeP,#fish,#shot,#photoBar,#vf,#mapView'+
     '{display:none!important}'+
-    '#visitTag{position:fixed;left:12px;top:12px;z-index:99998;padding:6px 12px;border-radius:999px;background:rgba(20,20,30,.65);color:#fff;font:600 14px system-ui,sans-serif;pointer-events:none}';
+    '#visitTag{max-width:calc(100vw - 24px);line-height:1.35;position:fixed;left:12px;top:12px;z-index:99998;padding:6px 12px;border-radius:999px;background:rgba(20,20,30,.65);color:#fff;font:600 14px system-ui,sans-serif;pointer-events:none}';
   document.head.appendChild(st);
 
   // 2) Chặn phím tương tác. Giữ WASD / chuột / Shift để đi lại.
@@ -61,7 +61,7 @@
 
   // 4) Huy hiệu
   addEventListener('load',()=>{
-    const d=document.createElement('div');d.id='visitTag';d.textContent='🌐 Tham quan · C: góc nhìn · 1-4: súng · R: nạp · Space: nhảy · Shift: lướt';document.body.appendChild(d);
+    const d=document.createElement('div');d.id='visitTag';d.textContent='🌐 Tham quan · Chuột trái: bắn / ném (lựu đạn: giữ rồi thả) · Chuột phải: ngắm · 1-4: súng · R: nạp · C: góc nhìn · Space: nhảy · Shift: lướt';document.body.appendChild(d);
   });
 
   // 5) Góc nhìn thứ 3 bằng phím C (game 1 vốn đã có: lăn chuột đổi khoảng cách camera, camBack > 0.6 là hiện nhân vật)

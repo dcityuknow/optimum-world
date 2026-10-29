@@ -1,8 +1,9 @@
 // ============================================================================
-// VISIT-KIT: mang bộ đồ nghề của game 2 (from0tohero) sang thế giới optimum-world - CHỈ ĐỂ XEM, KHÔNG BẮN, KHÔNG TƯƠNG TÁC.
+// VISIT-KIT: mang bộ đồ nghề của game 2 (from0tohero) sang thế giới optimum-world - ĐI DẠO + BẮN SÚNG + NÉM LỰU ĐẠN TỰ DO (không sát thương, không giới hạn đạn).
 // Có: nhảy (Space) · lướt (Shift) · đổi súng 1-4 (súng ngắn / súng dài / súng ngắm / lựu đạn) · nạp đạn (R) · ngắm (chuột phải, súng ngắm có kính)
 //     · góc nhìn thứ nhất: tay + súng trước mặt · góc nhìn thứ 3 (C): súng trong tay, súng còn lại đeo sau lưng / hông như game 2.
-// Bị khoá: bắn (chuột trái), ném lựu đạn - bấm sẽ hiện thông báo. Chỉ nạp khi ?visit=1, sau soldier.js (xem visit-mode.js).
+// Bắn: chuột trái (súng ngắn / súng ngắm: mỗi lần bấm 1 viên · súng dài: giữ chuột để bắn liên thanh). Lựu đạn: giữ chuột = rút chốt, thả = ném (giữ lâu ném xa hơn).
+// Có tia đạn, vết đạn, tia lửa, giật nòng, âm thanh, vụ nổ (quầng lửa, mảnh vụn, khói, vết cháy, rung màn hình). Chỉ nạp khi ?visit=1, sau soldier.js (xem visit-mode.js).
 // Cách hoạt động: bọc renderer.render, mỗi khung hình (sau khi loop.js đã đặt camera + chân tay) mới chỉnh thêm nhảy / tay / súng. Không sửa file nào của game 1.
 // Dữ liệu hình súng + chỗ đeo (GUN, SLING) lấy nguyên từ player/thirdperson.js của game 2.
 // ============================================================================
@@ -25,13 +26,13 @@ window.VisitKit=(function(){
   const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
   const ORDER=['pistol','rifle','sniper','grenade'];
   const NAME={pistol:'Súng ngắn',rifle:'Súng dài',sniper:'Súng ngắm',grenade:'Lựu đạn'};
-  const MAG={pistol:12,rifle:30,sniper:5,grenade:3},RES={pistol:36,rifle:90,sniper:10,grenade:0};   // số liệu từ config.js game 2 (chỉ hiển thị, không bắn nên không trừ)
+  const MAG={pistol:12,rifle:30,sniper:5,grenade:3},RES={pistol:36,rifle:90,sniper:10,grenade:0};   // số liệu từ config.js game 2 (đạn trong băng đếm thật, đạn dự trữ vô hạn)
   const ZOOM={pistol:58,rifle:50,sniper:18,grenade:66};
   const G0={pistol:[.2,-.2,-.5],rifle:[.22,-.24,-.58],sniper:[.22,-.26,-.64],grenade:[.2,-.2,-.46]};   // chỗ tay phải nắm súng (toạ độ camera, góc nhìn thứ nhất)
   const TPH={pistol:[.3,1.32,.62],rifle:[.28,1.2,.5],sniper:[.28,1.2,.5],grenade:[.28,1.12,.42]};      // chỗ tay phải nắm súng (toạ độ thân nhân vật, góc nhìn thứ 3)
   const SH_R=V3(.336,1.344,0),SH_L=V3(-.336,1.344,0),DOWN=V3(0,-1,0),ZAX=V3(0,0,1);
   const _a=V3(0,0,0),_b=V3(0,0,0),_c=V3(0,0,0);
-  const K={cur:'pistol',drawT:.35,relT:0,aim:0,aimOn:false,jy:0,vy:0,slideT:0,slideCd:0,sd:{x:0,z:0},t0:performance.now(),bob:0,mx:0,my:0,sx:0,sy:0,toastT:0,model:null,charKey:'vn',hooked:false};
+  const K={cur:'pistol',drawT:.35,relT:0,relMax:1.5,relFor:'pistol',ammo:{pistol:12,rifle:30,sniper:5},cd:0,gcd:0,fireHeld:false,kick:0,flashT:0,hold:-1,throwT:0,throwP:12,shake:0,aim:0,aimOn:false,jy:0,vy:0,slideT:0,slideCd:0,sd:{x:0,z:0},t0:performance.now(),bob:0,mx:0,my:0,sx:0,sy:0,toastT:0,model:null,charKey:'vn',hooked:false};
   let held={},slung={},vm=null,fpMat=null,fpGun={},armR=null,armL=null,hudEl=null,hudSlots=[],hudAmmo=null,toastEl=null,scopeEl=null;
 
   function gunMesh(t,mat){
@@ -62,7 +63,7 @@ window.VisitKit=(function(){
     if(!hudEl)return;
     ORDER.forEach((t,i)=>hudSlots[i].className='s'+(t===K.cur?' on':''));
     const t=K.cur;
-    hudAmmo.textContent=K.relT>0?'⟳ Đang nạp đạn…':(t==='grenade'?'💣 ×'+MAG.grenade:MAG[t]+' / '+RES[t]);
+    hudAmmo.textContent=K.relT>0?'⟳ Đang nạp đạn…':(t==='grenade'?'💣 ∞':K.ammo[t]+' / ∞');
   }
   function toast(msg){
     if(!toastEl)return;toastEl.textContent=msg;toastEl.style.opacity='1';K.toastT=1.6;
@@ -79,7 +80,7 @@ window.VisitKit=(function(){
   function buildVM(key){
     fpMat=new THREE.MeshLambertMaterial({vertexColors:true,emissive:0x1e1e1e,fog:false,depthTest:false,depthWrite:false});
     vm=new THREE.Group();vm.visible=false;camera.add(vm);
-    ORDER.forEach(t=>{const g=new THREE.Group();g.rotation.y=Math.PI;g.add(gunMesh(t,fpMat));g.visible=false;vm.add(g);fpGun[t]=g});
+    ORDER.forEach(t=>{const g=new THREE.Group();g.rotation.y=Math.PI;g.add(gunMesh(t,fpMat));if(MUZ[t]){const f=flashMesh(true);f.position.set(0,.045,MUZ[t]);g.add(f);flashFp[t]=f}g.visible=false;vm.add(g);fpGun[t]=g});
     const fp=Soldier.fp(key);armR=armMesh(fp);armL=armMesh(fp);vm.add(armR,armL);
   }
   const _mid=V3(0,0,0),_wt=V3(0,0,0),_d=V3(0,0,0);
@@ -101,8 +102,9 @@ window.VisitKit=(function(){
     vm.rotation.set(K.sy*.04,K.sx*.05,0);
     const p=G0[t],a=K.aim;
     g.position.set(p[0]*(1-a*.88),p[1]*(1-a*.45),p[2]);
-    let tilt=0;if(K.relT>0){tilt=Math.sin((1-K.relT/1.5)*Math.PI);g.position.y-=tilt*.1}
-    g.rotation.set(tilt*.5,Math.PI,-tilt*.6);
+    let tilt=0;if(K.relT>0){tilt=Math.sin((1-K.relT/K.relMax)*Math.PI);g.position.y-=tilt*.1}
+    g.rotation.set(tilt*.5-K.kick*.1,Math.PI,-tilt*.6);g.position.z+=K.kick*.06;
+    for(const u in flashFp)flashFp[u].visible=(u===t&&K.flashT>0);
     vm.updateMatrix();vm.updateMatrixWorld(true);g.updateMatrix();
     limb(armR,_c.set(.55,-.62,.12),_d.copy(g.position));armR.visible=true;
     const fg=GUN[t].fg;
@@ -112,7 +114,7 @@ window.VisitKit=(function(){
   // ---- góc nhìn thứ 3: súng trong tay + súng đeo ----
   function attach(m,key){
     ui();K.model=m;K.charKey=key||K.charKey;held={};slung={};
-    ORDER.forEach(t=>{const g=new THREE.Group();g.add(gunMesh(t));g.visible=false;m.g.add(g);held[t]=g});
+    ORDER.forEach(t=>{const g=new THREE.Group();g.add(gunMesh(t));if(MUZ[t]){const f=flashMesh(false);f.position.set(0,.045,MUZ[t]);g.add(f);flashTp[t]=f}g.visible=false;m.g.add(g);held[t]=g});
     ORDER.forEach(t=>{
       const c=SLING[t],g=new THREE.Group(),mesh=gunMesh(t);mesh.position.z=c.mid;g.add(mesh);
       g.position.set(c.p[0],c.p[1],c.p[2]);g.scale.setScalar(c.s);
@@ -128,19 +130,174 @@ window.VisitKit=(function(){
     const t=K.cur,h=held[t];
     ORDER.forEach(u=>{held[u].visible=(u===t);slung[u].visible=(u!==t)});
     const hp=TPH[t];h.position.set(hp[0],hp[1],hp[2]);
-    let tilt=0;if(K.relT>0)tilt=Math.sin((1-K.relT/1.5)*Math.PI);
+    let tilt=0;if(K.relT>0)tilt=Math.sin((1-K.relT/K.relMax)*Math.PI);
     const pit=(typeof player!=='undefined'&&player)?player.pitch:0;
     h.rotation.set(-pit*.7+tilt*.4,0,-tilt*.5);h.updateMatrix();
     aimArm(m.armR,SH_R,h.position);
+    for(const u in flashTp)flashTp[u].visible=(u===t&&K.flashT>0);
     const fg=GUN[t].fg;
     if(fg){_b.set(fg[0],fg[1],fg[2]).applyMatrix4(h.matrix);if(K.relT>0)_b.y-=tilt*.18;aimArm(m.armL,SH_L,_b)}
+  }
+  // ======================= BẮN SÚNG + NÉM LỰU ĐẠN (tự do, không sát thương, không giới hạn đạn) =======================
+  // Số liệu súng lấy từ config.js game 2: tốc độ bắn (rate, giây/viên), tự động (auto), độ lệch (sp), thời gian nạp (rl), cỡ băng (mag).
+  const FIRE={pistol:{rate:.26,auto:false,sp:0,rl:1.6,mag:12},rifle:{rate:.09,auto:true,sp:.012,rl:2.3,mag:30},sniper:{rate:1.2,auto:false,sp:.05,rl:3.2,mag:5}};
+  const MUZ={pistol:.3,rifle:.85,sniper:1.12};   // vị trí đầu nòng dọc theo thân súng (toạ độ súng)
+  const RC=new THREE.Raycaster(),_col=new THREE.Color(),_m4=new THREE.Matrix4(),_q=new THREE.Quaternion(),_sc=V3(1,1,1),_p3=V3(0,0,0);
+  let flashFp={},flashTp={},FXM=null,tracers=[],holes=[],blasts=[],scorches=[],thrown=[],fxN=0;
+  const FXMAX=700,FXD=[];for(let i=0;i<FXMAX;i++)FXD.push({life:0});
+
+  // ---- âm thanh tổng hợp (WebAudio, dùng lại SFX của game 1; không cần file âm thanh) ----
+  const SND={pistol:[1.5,.5,2600,.14,150],rifle:[1.1,.55,2100,.17,0],sniper:[.55,.9,1500,.5,140],boom:[.28,1.15,450,1.0,85],pin:[3,.1,6000,.05,0],click:[2.2,.14,5000,.04,0],dry:[4,.12,7000,.03,0]};
+  function sfx(kind,gain){
+    try{
+      if(typeof SFX==='undefined'||!SFX.ctx||!SFX.master||!SFX.noise)return;
+      const c=SFX.ctx;if(c.state==='suspended')c.resume();
+      const d=SND[kind],t=c.currentTime,src=c.createBufferSource(),lp=c.createBiquadFilter(),g=c.createGain(),vol=d[1]*(gain==null?1:gain);
+      src.buffer=SFX.noise;src.playbackRate.value=d[0];lp.type='lowpass';lp.frequency.value=d[2];
+      g.gain.setValueAtTime(Math.max(.002,vol),t);g.gain.exponentialRampToValueAtTime(.001,t+d[3]);
+      src.connect(lp);lp.connect(g);g.connect(SFX.master);src.start(t);src.stop(t+d[3]+.05);
+      if(d[4]){const o=c.createOscillator(),og=c.createGain();o.type='sine';o.frequency.setValueAtTime(d[4],t);o.frequency.exponentialRampToValueAtTime(35,t+.25);
+        og.gain.setValueAtTime(Math.max(.002,vol*.8),t);og.gain.exponentialRampToValueAtTime(.001,t+.3);o.connect(og);og.connect(SFX.master);o.start(t);o.stop(t+.35)}
+    }catch(e){}
+  }
+
+  // ---- hiệu ứng: hạt voxel (tia lửa / mảnh vụn / khói), tia đạn, vết đạn, vụ nổ ----
+  function fxInit(){
+    if(FXM||typeof scene==='undefined'||!scene)return;
+    FXM=new THREE.InstancedMesh(new THREE.BoxGeometry(1,1,1),new THREE.MeshBasicMaterial({fog:true}),FXMAX);
+    FXM.instanceMatrix.setUsage(THREE.DynamicDrawUsage);FXM.frustumCulled=false;FXM.userData.vkfx=true;FXM.setColorAt(0,new THREE.Color());FXM.count=0;scene.add(FXM);
+  }
+  // g: trọng lực (âm = bay lên, dùng cho khói)
+  function spark(x,y,z,vx,vy,vz,life,sz,col,g){
+    const d=FXD[fxN=(fxN+1)%FXMAX];d.x=x;d.y=y;d.z=z;d.vx=vx;d.vy=vy;d.vz=vz;d.life=d.max=life;d.sz=sz;d.col=col;d.g=g;
+  }
+  function fxUpdate(dt){
+    if(!FXM)return;let n=0;
+    for(let i=0;i<FXMAX;i++){
+      const d=FXD[i];if(d.life<=0)continue;
+      d.life-=dt;if(d.life<=0)continue;
+      d.vy-=d.g*dt;d.x+=d.vx*dt;d.y+=d.vy*dt;d.z+=d.vz*dt;
+      if(d.y<.04&&d.g>0){d.y=.04;d.vy*=-.35;d.vx*=.6;d.vz*=.6}
+      const k=d.g<0?d.sz*(1+(1-d.life/d.max)*1.6):d.sz*Math.min(1,d.life/d.max*2.2);   // khói nở ra, mảnh vụn nhỏ dần
+      _sc.set(k,k,k);_p3.set(d.x,d.y,d.z);_m4.compose(_p3,_q.identity(),_sc);FXM.setMatrixAt(n,_m4);_col.setHex(d.col);FXM.setColorAt(n,_col);n++;
+    }
+    FXM.count=n;FXM.instanceMatrix.needsUpdate=true;if(FXM.instanceColor)FXM.instanceColor.needsUpdate=true;
+    for(let i=tracers.length-1;i>=0;i--){const t=tracers[i];t.life-=dt;t.m.material.opacity=Math.max(0,t.life/.07)*.9;if(t.life<=0){t.m.visible=false}}
+    for(const h of holes){if(h.life>0){h.life-=dt;h.m.material.opacity=Math.min(.75,h.life/2);if(h.life<=0)h.m.visible=false}}
+    for(const s of scorches){if(s.life>0){s.life-=dt;s.m.material.opacity=Math.min(.5,s.life/4);if(s.life<=0)s.m.visible=false}}
+    for(const b of blasts){if(b.life>0){b.life-=dt;const k=1-b.life/.35;b.m.scale.setScalar(Math.max(.1,b.R*(1-(1-k)*(1-k))));b.m.material.opacity=.8*Math.max(0,b.life/.35);if(b.life<=0)b.m.visible=false}}
+  }
+  function poolMesh(arr,max,make){let o=arr.find(x=>x.life<=0);if(!o){if(arr.length<max){o={m:make(),life:0};o.m.userData.vkfx=true;scene.add(o.m);arr.push(o)}else{o=arr.reduce((a,b)=>a.life<b.life?a:b)}}return o}
+  const mkTracer=()=>new THREE.Mesh(new THREE.BoxGeometry(1,1,1),new THREE.MeshBasicMaterial({color:0xffe27a,transparent:true,opacity:.9,blending:THREE.AdditiveBlending,depthWrite:false,fog:false}));
+  const mkHole=()=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(.2,.2),new THREE.MeshBasicMaterial({color:0x15151c,transparent:true,opacity:.75,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2,side:THREE.DoubleSide}));return m};
+  const mkBlast=()=>new THREE.Mesh(new THREE.SphereGeometry(1,14,10),new THREE.MeshBasicMaterial({color:0xffa238,transparent:true,opacity:.8,blending:THREE.AdditiveBlending,depthWrite:false,fog:false}));
+  const mkScorch=()=>new THREE.Mesh(new THREE.CircleGeometry(2.4,20),new THREE.MeshBasicMaterial({color:0x101014,transparent:true,opacity:.5,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2}));
+  function tracer(a,b){
+    const o=poolMesh(tracers,10,mkTracer),len=Math.max(.1,a.distanceTo(b));
+    o.m.visible=true;o.life=.07;o.m.position.copy(a).add(b).multiplyScalar(.5);o.m.lookAt(b);o.m.scale.set(.022,.022,len);o.m.material.opacity=.9;
+  }
+  function bulletHole(p,n){
+    const o=poolMesh(holes,40,mkHole);o.m.visible=true;o.life=12;o.m.position.copy(p).addScaledVector(n,.015);o.m.lookAt(_p3.copy(p).add(n));o.m.material.opacity=.75;
+  }
+
+  // ---- bắn ----
+  const okHit=o=>{
+    if(!o.isMesh||o.userData.vkfx)return false;
+    const m=Array.isArray(o.material)?o.material[0]:o.material;if(!m||m.depthWrite===false||m.depthTest===false)return false;   // bỏ qua mây, tia sáng, hiệu ứng, tay súng
+    for(let p=o;p;p=p.parent){if(p.visible===false)return false;if(avatar&&p===avatar)return false}
+    return true;
+  };
+  function muzzlePos(t,out){
+    const tp=!!(avatar&&avatar.visible);
+    if(tp&&flashTp[t]){flashTp[t].parent.updateWorldMatrix(true,false);return flashTp[t].getWorldPosition(out)}
+    camera.updateMatrixWorld();return out.set(.18,-.16,-1.05).applyMatrix4(camera.matrixWorld);
+  }
+  function shoot(){
+    const t=K.cur,F=FIRE[t];if(!F||K.cd>0||K.relT>0||K.drawT>0)return;
+    if(K.ammo[t]<=0){sfx('dry');K.cd=.3;reload();return}
+    fxInit();
+    K.ammo[t]--;K.cd=F.rate;K.flashT=.05;K.kick=1;hud();
+    sfx(t);
+    if(typeof player!=='undefined'&&player)player.pitch=Math.min(1.3,player.pitch+(t==='sniper'?.05:t==='rifle'?.012:.02));   // giật nòng
+    const sp=(t==='sniper'&&K.aim>.6)?0:F.sp;
+    RC.setFromCamera({x:(Math.random()-.5)*sp*2,y:(Math.random()-.5)*sp*2},camera);RC.far=110;
+    camera.updateMatrixWorld();
+    const hits=RC.intersectObjects(scene.children,true);
+    let h=null;for(const x of hits){if(okHit(x.object)){h=x;break}}
+    const from=muzzlePos(t,V3(0,0,0)),to=h?h.point.clone():RC.ray.at(80,V3(0,0,0));
+    tracer(from,to);
+    if(h){
+      const n=h.face?h.face.normal.clone().transformDirection(h.object.matrixWorld):V3(0,1,0);
+      if(n.dot(RC.ray.direction)>0)n.negate();
+      const mat=Array.isArray(h.object.material)?h.object.material[0]:h.object.material,c=(mat&&mat.color)?mat.color.getHex():0xcccccc;
+      bulletHole(h.point,n);
+      for(let i=0;i<9;i++)spark(h.point.x,h.point.y,h.point.z,n.x*3+(Math.random()-.5)*5,n.y*3+Math.random()*4,n.z*3+(Math.random()-.5)*5,.35+Math.random()*.3,.04+Math.random()*.05,i%3?c:0xffe27a,18);
+    }
+  }
+  function reload(){
+    const t=K.cur,F=FIRE[t];if(!F||K.relT>0||K.ammo[t]>=F.mag)return;
+    K.relFor=t;K.relMax=F.rl;K.relT=F.rl;sfx('click');hud();
+  }
+
+  // ---- lựu đạn: giữ chuột = rút chốt, thả = ném (giữ càng lâu ném càng xa) ----
+  function gPin(){if(K.gcd>0||K.hold>=0||K.throwT>0)return;K.hold=0;sfx('pin')}
+  function gRelease(){if(K.hold<0)return;K.throwP=11+5*Math.min(1,K.hold/1);K.hold=-1;K.throwT=.22;K.kick=1.2}
+  const GREN_LINE='Optimum fire in the house';   // câu thoại như game 2
+  function say(){
+    toast('🗣️ "'+GREN_LINE+'"');
+    try{const ss=window.speechSynthesis;if(!ss)return;ss.cancel();const u=new SpeechSynthesisUtterance(GREN_LINE);u.lang='en-US';u.rate=1;u.pitch=.9;u.volume=1;ss.speak(u)}catch(e){}
+  }
+  function launch(pw){
+    fxInit();
+    const d=V3(0,0,0);camera.getWorldDirection(d);
+    const m=gunMesh('grenade');m.scale.setScalar(1.8);m.userData.vkfx=true;scene.add(m);
+    thrown.push({x:camera.position.x+d.x*.6,y:Math.max(.2,camera.position.y-.3+d.y*.6),z:camera.position.z+d.z*.6,vx:d.x*pw,vy:d.y*pw+3,vz:d.z*pw,t:2,m});
+    K.gcd=.8;say();sfx('click');
+  }
+  function explode(g){
+    fxInit();
+    const cx=g.x,cy=g.y+.2,cz=g.z,dist=Math.hypot(camera.position.x-cx,camera.position.y-cy,camera.position.z-cz);
+    sfx('boom',1/(1+dist/22));
+    const b=poolMesh(blasts,3,mkBlast);b.m.visible=true;b.life=.35;b.R=6;b.m.position.set(cx,cy,cz);b.m.scale.setScalar(.1);
+    if(g.y<1.5){const s=poolMesh(scorches,6,mkScorch);s.m.visible=true;s.life=20;s.m.position.set(cx,.03,cz);s.m.rotation.x=-Math.PI/2;s.m.material.opacity=.5}
+    for(let i=0;i<72;i++)spark(cx,cy,cz,(Math.random()-.5)*24,Math.random()*16,(Math.random()-.5)*24,.6+Math.random()*.6,.08+Math.random()*.12,i%2?0xff9a3c:0xffe066,22);
+    for(let i=0;i<14;i++)spark(cx+(Math.random()-.5)*1.5,cy,cz+(Math.random()-.5)*1.5,(Math.random()-.5)*2.5,2+Math.random()*3,(Math.random()-.5)*2.5,1.2+Math.random()*.9,.5+Math.random()*.5,i%2?0x8a8f99:0x6c717c,-1.2);   // khói
+    K.shake=Math.max(K.shake,Math.min(1,9/(dist+4)));
+  }
+  function grenTick(dt){
+    for(let i=thrown.length-1;i>=0;i--){
+      const g=thrown[i];g.t-=dt;g.vy-=22*dt;
+      const nx=g.x+g.vx*dt,nz=g.z+g.vz*dt;
+      if(blocked(nx,g.z))g.vx*=-.4;else g.x=nx;
+      if(blocked(g.x,nz))g.vz*=-.4;else g.z=nz;
+      g.y+=g.vy*dt;
+      if(g.y<=.12){g.y=.12;if(g.vy<-2)g.vy=-g.vy*.4;else g.vy=0;const f=Math.pow(.1,dt);g.vx*=f;g.vz*=f}
+      g.m.position.set(g.x,g.y,g.z);g.m.rotation.x+=dt*6;g.m.rotation.z+=dt*4;
+      if(g.t<=0){scene.remove(g.m);thrown.splice(i,1);explode(g)}
+    }
+  }
+  // ---- nhịp mỗi khung hình của phần bắn súng ----
+  function fireTick(dt){
+    fxInit();
+    K.cd-=dt;K.gcd-=dt;
+    if(K.kick>0)K.kick=Math.max(0,K.kick-dt*9);
+    if(K.flashT>0)K.flashT-=dt;
+    if(K.hold>=0)K.hold+=dt;
+    if(K.throwT>0){K.throwT-=dt;if(K.throwT<=0){K.throwT=0;launch(K.throwP)}}
+    const F=FIRE[K.cur];
+    if(K.fireHeld&&F&&F.auto&&K.cd<=0)shoot();                  // súng dài bắn liên thanh khi giữ chuột
+    if(K.shake>0){K.shake=Math.max(0,K.shake-dt*1.8);camera.position.x+=(Math.random()-.5)*K.shake*.35;camera.position.y+=(Math.random()-.5)*K.shake*.35;camera.position.z+=(Math.random()-.5)*K.shake*.35}
+    grenTick(dt);fxUpdate(dt);
+  }
+  function flashMesh(fp){
+    const f=new THREE.Mesh(new THREE.BoxGeometry(.13,.13,.06),new THREE.MeshBasicMaterial({color:0xffc84a,transparent:true,opacity:.95,blending:THREE.AdditiveBlending,depthWrite:false,depthTest:!fp,fog:false}));
+    f.visible=false;f.frustumCulled=false;f.renderOrder=1002;f.userData.vkfx=true;return f;
   }
   // ---- nhảy / lướt / đổi súng / nạp đạn ----
   function select(i){
     const t=ORDER[i];if(!t||t===K.cur)return;
-    K.cur=t;K.drawT=.35;K.relT=0;hud();
+    K.cur=t;K.drawT=.35;K.relT=0;K.hold=-1;K.throwT=0;hud();
   }
-  function reload(){if(K.cur==='grenade'||K.relT>0)return;K.relT=1.5;hud()}
   function trySlide(){
     if(K.jy>0||K.slideCd>0||typeof keys==='undefined')return;
     let f=0,s=0;
@@ -156,7 +313,8 @@ window.VisitKit=(function(){
       const now=performance.now(),dt=Math.min(.05,Math.max(0,(now-K.t0)/1000));K.t0=now;
       const busy=(typeof panelOpen!=='undefined'&&panelOpen)||(typeof DLG!=='undefined'&&DLG)||(typeof photoMode!=='undefined'&&photoMode);
       if(K.drawT>0)K.drawT=Math.max(0,K.drawT-dt);
-      if(K.relT>0){K.relT=Math.max(0,K.relT-dt);if(K.relT===0)hud()}
+      if(K.relT>0){K.relT=Math.max(0,K.relT-dt);if(K.relT===0){if(FIRE[K.relFor])K.ammo[K.relFor]=FIRE[K.relFor].mag;hud()}}
+      fireTick(dt);
       if(K.toastT>0){K.toastT-=dt;if(K.toastT<=0&&toastEl)toastEl.style.opacity='0'}
       K.slideCd-=dt;
       K.aim+=((K.aimOn&&!busy?1:0)-K.aim)*Math.min(1,dt*12);
@@ -200,12 +358,17 @@ window.VisitKit=(function(){
     if(e.button===2){K.aimOn=true;e.preventDefault();return}
     if(e.button===0&&typeof locked!=='undefined'&&locked){
       e.stopImmediatePropagation();
-      toast(K.cur==='grenade'?'🚫 Chỉ tham quan - không ném được':'🚫 Chỉ tham quan - không bắn được');
+      try{if(typeof sfxWake==='function')sfxWake()}catch(err){}   // mở khoá âm thanh (cần thao tác người dùng)
+      K.fireHeld=true;
+      if(K.cur==='grenade')gPin();else shoot();
     }
   },true);
-  addEventListener('mouseup',e=>{if(e.button===2)K.aimOn=false},true);
+  addEventListener('mouseup',e=>{
+    if(e.button===2)K.aimOn=false;
+    if(e.button===0){K.fireHeld=false;if(K.cur==='grenade')gRelease()}
+  },true);
   addEventListener('contextmenu',e=>e.preventDefault(),true);
-  addEventListener('blur',()=>{K.aimOn=false});
+  addEventListener('blur',()=>{K.aimOn=false;K.fireHeld=false;K.hold=-1});
   addEventListener('mousemove',e=>{K.mx+=e.movementX||0;K.my+=e.movementY||0},true);
-  return {attach:attach,state:K,select:select,reload:reload,tick:tick};
+  return {attach:attach,state:K,select:select,reload:reload,tick:tick,shoot:shoot,gPin:gPin,gRelease:gRelease};
 })();
