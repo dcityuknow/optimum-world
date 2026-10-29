@@ -95,4 +95,5 @@
       }else if(Date.now()-t0>40000)clearInterval(id);   // chờ tối đa 40s cho thành phố dựng xong
     },300);
   }));
+  load('js/visit-portal.js');   // màu rực rỡ + cổng trở về Block Arena (js/visit-portal.js)
 })();
