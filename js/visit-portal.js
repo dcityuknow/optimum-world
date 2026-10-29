@@ -264,9 +264,9 @@
     if(e.data.type==='rift-pause'){paused=true;setAudio(false)}
     else if(e.data.type==='rift-resume'){
       paused=false;sent=false;t0=performance.now();setAudio(true);
-      if(p){   // luôn xuất hiện ngay trước cổng, quay mặt về cổng
+      if(p){   // vừa bước qua cổng: đứng cách cổng 4,5m, cổng ở phía sau lưng
         const x=p.x+p.nx*4.5,z=p.z+p.nz*4.5;
-        player.x=x;player.z=z;player.yaw=Math.atan2(p.x-x,p.z-z)+Math.PI;player.pitch=-.05;armed=false;
+        player.x=x;player.z=z;player.yaw=Math.atan2(-p.nx,-p.nz);player.pitch=-.05;armed=false;   // quay mặt ra xa cổng: cổng nằm sau lưng
       }
       try{window.focus()}catch(e){}
     }
