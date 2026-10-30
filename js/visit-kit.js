@@ -477,6 +477,7 @@ window.VisitKit=(function(){
   },true);
   addEventListener('mousedown',e=>{
     if(e.button===2){K.aimOn=true;e.preventDefault();return}
+    if(window.__visitPaused)return;   // đang ở game cha (Block Arena): không nhận chuột / bắn
     if(e.button===0&&typeof locked!=='undefined'&&locked){
       e.stopImmediatePropagation();
       try{if(typeof sfxWake==='function')sfxWake()}catch(err){}   // mở khoá âm thanh (cần thao tác người dùng)

@@ -264,13 +264,18 @@
   function setAudio(on){try{if(typeof SFX!=='undefined'&&SFX.ctx)on?SFX.ctx.resume():SFX.ctx.suspend()}catch(e){}}
   addEventListener('message',e=>{
     if(e.source!==parent||!e.data)return;
-    if(e.data.type==='rift-pause'){paused=true;setAudio(false)}
+    if(e.data.type==='rift-pause'){
+      paused=true;window.__visitPaused=true;setAudio(false);
+      try{if(window.VisitKit){VisitKit.state.fireHeld=false;VisitKit.state.hold=-1}}catch(err){}
+      try{document.exitPointerLock()}catch(err){}     // trả khóa chuột về game cha (nếu không: chuột bên kia vẫn nhận, bấm bắn vẫn nghe tiếng súng bên này)
+      try{window.blur()}catch(err){}
+    }
     else if(e.data.type==='rift-bot'){   // 1 bot từ Block Arena vừa chạy qua cổng sang đây: xuất hiện ở cổng, đuổi theo người chơi
       try{if(p&&window.VisitKit&&VisitKit.spawnBot){const lat=(Math.random()-.5)*G.RB*CFG.size*1.2;
         VisitKit.spawnBot(p.x+p.nx*1.2+p.nz*lat,p.z+p.nz*1.2-p.nx*lat,+e.data.hp||100,+e.data.maxhp||100)}}catch(err){}
     }
     else if(e.data.type==='rift-resume'){
-      paused=false;sent=false;t0=performance.now();setAudio(true);
+      paused=false;window.__visitPaused=false;sent=false;t0=performance.now();setAudio(true);
       if(p){   // vừa bước qua cổng: đứng cách cổng 4,5m, cổng ở phía sau lưng
         const x=p.x+p.nx*4.5,z=p.z+p.nz*4.5;
         player.x=x;player.z=z;player.yaw=Math.atan2(-p.nx,-p.nz);player.pitch=-.05;armed=false;   // quay mặt ra xa cổng: cổng nằm sau lưng
