@@ -24,7 +24,6 @@ function seasonNow(){
    nobody who earned it stays in the dark. */
 try{ localStorage.removeItem('optimum-world:night'); }catch(e){}
 function phaseNow(){
-  if(/[?&]visit=1(&|$)/.test(location.search)) return 'day';   // chế độ tham quan (từ game from0tohero): luôn ban ngày cho rực rỡ
   const h=new Date().getHours()+new Date().getMinutes()/60;
   if(h<5.5) return 'night';
   if(h<7.5) return 'dawn';
@@ -34,7 +33,6 @@ function phaseNow(){
   return 'night';
 }
 function weatherNow(){
-  if(/[?&]visit=1(&|$)/.test(location.search)) return 'clear';   // tham quan: luôn trời quang (không mây mù / mưa)
   const r=Math.random();
   if(r<0.62) return 'clear';
   if(r<0.82) return 'cloudy';
