@@ -255,7 +255,7 @@
       sent=true;
       let followers=[];   // bot còn sống gần cổng chạy theo người chơi về Block Arena (tới nơi sau dist/5,5 giây)
       try{if(window.VisitKit&&VisitKit.takeBots)followers=VisitKit.takeBots(p.x,p.z,45,16).map(o=>({hp:o.hp,maxhp:o.maxhp,nm:o.nm,delay:Math.min(6,Math.max(.4,o.dist/5.5))}))}catch(e){}
-      toParent({type:'optimum-rift-back',bots:followers});
+      toParent({type:'optimum-rift-back',bots:followers,w:(window.VisitKit&&VisitKit.state)?VisitKit.state.cur:null});   // kèm súng đang cầm để game cha cầm đúng súng đó
       setTimeout(()=>{sent=false},2500);   // phòng khi game cha chưa kịp xử lý thì vẫn thử lại được
     }
   }
@@ -275,7 +275,8 @@
         VisitKit.spawnBot(p.x+p.nx*1.2+p.nz*lat,p.z+p.nz*1.2-p.nx*lat,+e.data.hp||100,+e.data.maxhp||100,e.data.nm)}}catch(err){}
     }
     else if(e.data.type==='rift-resume'){
-      paused=false;window.__visitPaused=false;sent=false;t0=performance.now();setAudio(true);
+      paused=false;window.__visitPaused=false;try{if(e.data.w&&window.VisitKit&&VisitKit.selectName)VisitKit.selectName(e.data.w)}catch(err){}   // cầm đúng súng đang cầm bên Block Arena
+      window.__visitPaused=false;sent=false;t0=performance.now();setAudio(true);
       if(p){   // vừa bước qua cổng: đứng cách cổng 4,5m, cổng ở phía sau lưng
         const x=p.x+p.nx*4.5,z=p.z+p.nz*4.5;
         player.x=x;player.z=z;player.yaw=Math.atan2(-p.nx,-p.nz);player.pitch=-.05;armed=false;   // quay mặt ra xa cổng: cổng nằm sau lưng

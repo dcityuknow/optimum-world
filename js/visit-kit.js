@@ -571,6 +571,7 @@ window.VisitKit=(function(){
     const t=ORDER[i];if(!t||t===K.cur)return;
     K.cur=t;K.drawT=.35;K.relT=0;K.hold=-1;K.throwT=0;hud();
   }
+  function selectName(n){const i=ORDER.indexOf(n);if(i>=0)select(i)}
   function trySlide(){
     if(K.jy>0||K.slideCd>0||typeof keys==='undefined')return;
     let f=0,s=0;
@@ -658,5 +659,5 @@ window.VisitKit=(function(){
   addEventListener('contextmenu',e=>e.preventDefault(),true);
   addEventListener('blur',()=>{K.aimOn=false;K.fireHeld=false;K.hold=-1});
   addEventListener('mousemove',e=>{K.mx+=e.movementX||0;K.my+=e.movementY||0},true);
-  return {attach:attach,state:K,select:select,reload:reload,tick:tick,shoot:shoot,gPin:gPin,gRelease:gRelease,spawnBot:spawnBot,takeBots:takeBots,prepBots:prepBots,bots:RBOT.list};
+  return {attach:attach,state:K,select:select,selectName:selectName,reload:reload,tick:tick,shoot:shoot,gPin:gPin,gRelease:gRelease,spawnBot:spawnBot,takeBots:takeBots,prepBots:prepBots,bots:RBOT.list};
 })();
