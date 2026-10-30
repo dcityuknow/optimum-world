@@ -28,12 +28,11 @@ window.VisitKit=(function(){
   const NAME={pistol:'Súng ngắn',rifle:'Súng dài',sniper:'Súng ngắm',grenade:'Lựu đạn'};
   const MAG={pistol:12,rifle:30,sniper:5,grenade:3},RES={pistol:36,rifle:90,sniper:10,grenade:0};   // số liệu từ config.js game 2 (đạn trong băng đếm thật, đạn dự trữ vô hạn)
   const ZOOM={pistol:58,rifle:50,sniper:18,grenade:66};
-  const G0={pistol:[.2,-.2,-.5],rifle:[.22,-.24,-.58],sniper:[.22,-.26,-.64],grenade:[.2,-.2,-.46]};   // chỗ tay phải nắm súng (toạ độ camera, góc nhìn thứ nhất)
-  const TPH={pistol:[.3,1.32,.62],rifle:[.28,1.2,.5],sniper:[.28,1.2,.5],grenade:[.28,1.12,.42]};      // chỗ tay phải nắm súng (toạ độ thân nhân vật, góc nhìn thứ 3)
+    const TPH={pistol:[.3,1.32,.62],rifle:[.28,1.2,.5],sniper:[.28,1.2,.5],grenade:[.28,1.12,.42]};      // chỗ tay phải nắm súng (toạ độ thân nhân vật, góc nhìn thứ 3)
   const SH_R=V3(.336,1.344,0),SH_L=V3(-.336,1.344,0),DOWN=V3(0,-1,0),ZAX=V3(0,0,1);
   const _a=V3(0,0,0),_b=V3(0,0,0),_c=V3(0,0,0);
   const K={cur:'pistol',drawT:.35,relT:0,relMax:1.5,relFor:'pistol',ammo:{pistol:12,rifle:30,sniper:5},cd:0,gcd:0,fireHeld:false,kick:0,flashT:0,hold:-1,throwT:0,throwP:12,shake:0,aim:0,aimOn:false,jy:0,vy:0,slideT:0,slideCd:0,sd:{x:0,z:0},t0:performance.now(),bob:0,mx:0,my:0,sx:0,sy:0,toastT:0,model:null,charKey:'vn',hooked:false};
-  let held={},slung={},vm=null,fpMat=null,fpGun={},armR=null,armL=null,hudEl=null,hudSlots=[],hudAmmo=null,toastEl=null,scopeEl=null;
+  let held={},slung={},vm=null,hudEl=null,hudSlots=[],hudAmmo=null,toastEl=null,scopeEl=null;
 
   function gunMesh(t,mat){
     const v=new VB();GUN[t].parts.forEach(p=>v.box(p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7],true));
@@ -68,48 +67,184 @@ window.VisitKit=(function(){
   function toast(msg){
     if(!toastEl)return;toastEl.textContent=msg;toastEl.style.opacity='1';K.toastT=1.6;
   }
-  // ---- góc nhìn thứ nhất: tay + súng gắn vào camera, vẽ đè lên cảnh ----
-  function armMesh(fp){
-    const v=new VB();
-    v.box(0,0,0,.085,.085,1,(i,j,k,nx,ny,nz)=>{
-      if(k/nz>=.8)return fp.glove||((i+j+k)&1?fp.skin[0]:fp.skin[1]);
-      return fp.sleeve(i,j,k);
-    },.03,false);
-    const m=v.mesh();m.material=fpMat;m.renderOrder=1000;m.frustumCulled=false;return m;
+  // ---- góc nhìn thứ nhất: CHÉP NGUYÊN từ game gốc (player/player.js + player/weapons.js + player/viewmodel.js) ----
+  // Tay + súng vẽ ở lượt riêng (layer 1) sau khi vẽ thế giới, xoá depth -> không bị tường che, không bị tone mapping của thế giới làm nhạt.
+  // Vật liệu tự viết (đèn bán cầu + đèn mặt trời cố định như game gốc) nên màu luôn đậm, không phụ thuộc ánh sáng / sương mù của thế giới này.
+  const chk=(a,b)=>(i,j,k)=>((i+j+k)&1)?a:b;
+  const DKC=chk(0x3a3850,0x2b2a3a),YLC=chk(0xf2b84b,0xffd76a);
+  let vmMat=null,GLASS_M=null,GLASS_G=null,FPW={};
+  function fpArm(fp,x,y,z,rx,ry,left){
+    const g=new THREE.Group(),v=new VB(),CS=fp;
+    const SKT=CS.glove?[CS.glove,CS.glove]:CS.skin,SK=chk(SKT[0],SKT[1]),NAIL=CS.glove?CS.glove:0xfff0e8;
+    v.box(0,0,.43,.17,.17,.66,CS.sleeve,.03,true);
+    v.box(0,0,.1,.19,.19,.06,CS.cuff,.02,true);
+    v.box(0,0,.19,.18,.18,.05,CS.band,.02,true);
+    v.box(0,.1,.19,.13,.03,.08,0x2b2a3a,.015);v.box(0,.118,.19,.09,.008,.05,0x7fdfff,.01);
+    v.box(0,0,0,.15,.13,.12,SK,.02,true);
+    for(let f=0;f<4;f++){const yy=.045-.03*f;v.box(0,yy,-.085,.13,.028,.05,SK,.014);v.box(0,yy,-.113,.09,.02,.006,NAIL,.006)}
+    v.box(-.09,.03,-.01,.05,.05,.11,SK,.016);v.box(-.09,.03,-.068,.03,.03,.006,NAIL,.006);
+    v.box(0,.068,-.01,.13,.012,.1,CS.glove||CS.band,.012);
+    g.add(v.mesh());g.position.set(x,y,z);g.rotation.set(rx,ry,0);if(left)g.scale.x=-1;return g;
   }
+  function voxPin(s,cx,cy,cz){s.cyl(cx-.035,cy+.115,cz,.03,.01,0xd8d8e0,.01,'z',.02);s.box(cx-.005,cy+.115,cz,.03,.01,.01,0xd8d8e0,.008)}
+  function voxGrenade(s,cx,cy,cz,pin){
+    s.ell(cx,cy,cz,.058,.075,.058,(i,j,k)=>(i%3===0||j%3===0||k%3===0)?0x3f5a2c:0x6b8a45,.018);
+    s.cyl(cx,cy+.062,cz,.03,.012,0xffc93a,.012,'y');
+    s.cyl(cx,cy+.085,cz,.022,.03,0x8a8f96,.012,'y');s.cyl(cx,cy+.11,cz,.017,.025,0x5b6068,.012,'y');
+    if(pin)voxPin(s,cx,cy,cz);
+    s.box(cx+.05,cy+.09,cz,.06,.014,.03,0xa9adb5,.01);s.box(cx+.068,cy+.02,cz,.012,.15,.03,0xa9adb5,.01);
+  }
+  function scopeLens(x,y,z,r){const m=new THREE.Mesh(GLASS_G,GLASS_M);m.scale.setScalar(r);m.position.set(x,y,z);m.renderOrder=3;m.userData.glass=true;return m}
+  function bPistol(G,MG,SL,fp){
+    const f=new VB(),s=new VB(),m=new VB();
+    G.add(fpArm(fp,.24,-.3,-.45,.35,.18));
+    s.box(.22,-.14,-.64,.085,.07,.44,(i,j,k,nx,ny,nz)=>j===ny-1?0xe9eef5:(k>=nz-5&&(k&1))?0x9aa6b8:0xf4f7fb,.02);
+    s.box(.22,-.103,-.66,.03,.012,.3,0xff8a2a,.012);
+    s.box(.22,-.09,-.83,.018,.026,.02,0xff6a1a,.01);
+    s.box(.203,-.093,-.45,.014,.03,.02,0x2b2a3a,.01);s.box(.237,-.093,-.45,.014,.03,.02,0x2b2a3a,.01);
+    s.box(.2655,-.135,-.6,.006,.03,.09,0x2b2a3a,.008);
+    s.box(.22,-.14,-.868,.04,.035,.016,0x2b2a3a,.01);
+    s.box(.22,-.108,-.418,.02,.03,.02,0x2b2a3a,.01);
+    f.box(.22,-.2,-.62,.075,.05,.4,chk(0x5a6b85,0x4b5b75),.02);
+    f.box(.22,-.2,-.815,.078,.052,.03,0xff8a2a,.015);
+    f.box(.22,-.262,-.56,.03,.012,.12,0x3a4358,.012);f.box(.22,-.236,-.615,.03,.05,.012,0x3a4358,.012);
+    f.box(.22,-.235,-.5,.014,.04,.014,0x2b2a3a,.01);
+    for(let k=0;k<5;k++)f.box(.22,-.24-.033*k,-.455+.011*k,.072,.035,.085,chk(0xff8a2a,0x3a4358),.017);
+    m.box(0,0,0,.066,.075,.078,chk(0x4d9dff,0x3a7fe0),.016);m.box(0,-.043,0,.078,.014,.09,0xff8a2a,.014);
+    MG.position.set(.22,-.425,-.415);
+    G.add(f.mesh());SL.add(s.mesh());MG.add(m.mesh());
+    return {la:fpArm(fp,-.28,-.7,-.4,.5,-.3,true),lt:V3(.2,-.45,-.47),mz:[.22,-.14,-.9],sg:V3(.17,-.11,-.42)};
+  }
+  function bRifle(G,MG,SL,fp){
+    const f=new VB(),s=new VB(),m=new VB();
+    G.add(fpArm(fp,.2,-.3,-.42,.4,.15));
+    f.box(.14,-.19,-.6,.1,.1,.52,YLC,.026);
+    f.box(.192,-.19,-.6,.008,.04,.3,0x4d9dff,.01);f.box(.088,-.19,-.6,.008,.04,.3,0x4d9dff,.01);
+    f.box(.14,-.25,-.56,.09,.03,.36,DKC,.02);
+    f.box(.14,-.195,-1.06,.09,.09,.42,DKC,.022);
+    f.box(.14,-.195,-.92,.1,.1,.03,0xff9a3c,.02);f.box(.14,-.195,-1.24,.1,.1,.03,0xff9a3c,.02);
+    f.cyl(.14,-.195,-1.44,.02,.3,DKC,.012,'z');
+    f.cyl(.14,-.195,-1.61,.03,.05,0xffd23f,.014,'z');
+    f.cyl(.14,-.125,-1.38,.028,.014,0x2b2a3a,.01,'z',.016);f.box(.14,-.165,-1.38,.014,.024,.014,0x2b2a3a,.01);
+    f.cyl(.14,-.105,-.72,.03,.014,0x2b2a3a,.01,'z',.018);f.box(.14,-.138,-.72,.016,.012,.016,0x2b2a3a,.01);
+    for(let k=0;k<5;k++)f.box(.14,-.29-.03*k,-.44+.012*k,.06,.03,.075,chk(0x3a3850,0xff9a3c),.015);
+    f.box(.14,-.2,-.31,.07,.1,.14,DKC,.024);
+    s.box(.14,-.13,-.6,.075,.024,.4,DKC,.02);s.box(.2,-.17,-.66,.03,.03,.05,0xff9a3c,.015);
+    for(let k=0;k<5;k++)m.box(0,-.032*k,-.006*k*k,.05,.034,.075,k===4?0xff9a3c:YLC,.017);
+    MG.position.set(.14,-.29,-.62);
+    G.add(f.mesh());SL.add(s.mesh());MG.add(m.mesh());
+    return {la:fpArm(fp,.06,-.3,-.95,.4,-.2,true),lt:V3(.14,-.44,-.62),mz:[.14,-.195,-1.66],sg:V3(.1,-.12,-.46)};
+  }
+  function bSniper(G,MG,SL,fp){
+    const f=new VB(),s=new VB(),m=new VB();
+    G.add(fpArm(fp,.2,-.3,-.42,.4,.15));
+    f.box(.14,-.2,-.7,.09,.12,.7,DKC,.024);
+    f.box(.187,-.2,-.72,.008,.07,.4,0x4d9dff,.01);f.box(.093,-.2,-.72,.008,.07,.4,0x4d9dff,.01);
+    f.cyl(.14,-.195,-1.55,.025,.9,DKC,.014,'z');
+    f.cyl(.14,-.195,-1.3,.03,.03,0xffd23f,.014,'z');f.cyl(.14,-.195,-1.6,.03,.03,0xffd23f,.014,'z');
+    f.cyl(.14,-.195,-2.05,.035,.12,(a,b,l)=>l&1?0xffd23f:0xf2b84b,.014,'z');
+    f.box(.14,-.235,-1.25,.075,.05,.4,chk(0x4d9dff,0x3a7fe0),.02);
+    f.cyl(.14,-.1,-.78,.032,.42,DKC,.016,'z');
+    f.cyl(.14,-.1,-.98,.045,.1,0x2b2a3a,.016,'z');
+    f.cyl(.14,-.1,-.54,.04,.08,0x2b2a3a,.016,'z');
+    f.cyl(.14,-.058,-.78,.014,.03,0xffd23f,.01,'y');f.cyl(.174,-.1,-.78,.014,.03,0xffd23f,.01,'x');
+    f.box(.14,-.145,-.68,.04,.05,.05,DKC,.014);f.box(.14,-.145,-.88,.04,.05,.05,DKC,.014);
+    for(let k=0;k<5;k++)f.box(.14,-.29-.03*k,-.42+.012*k,.06,.03,.075,chk(0x3a3850,0x4d9dff),.015);
+    f.box(.14,-.18,-.24,.075,.15,.18,DKC,.024);f.box(.14,-.11,-.26,.06,.03,.12,0x4d9dff,.015);
+    G.add(scopeLens(.14,-.1,-.496,.036),scopeLens(.14,-.1,-1.036,.042));
+    s.box(.19,-.15,-.55,.05,.02,.02,0xc9c9d6,.012);s.cyl(.225,-.15,-.55,.016,.03,0xffd23f,.012,'x');
+    m.box(0,0,0,.07,.1,.1,YLC,.02);
+    MG.position.set(.14,-.31,-.72);
+    G.add(f.mesh());SL.add(s.mesh());MG.add(m.mesh());
+    return {la:fpArm(fp,.06,-.3,-1.0,.4,-.2,true),lt:V3(.14,-.42,-.72),mz:[.14,-.195,-2.14],sg:V3(.22,-.13,-.5),ads:V3(-.14,.1,.43)};
+  }
+  function bGrenade(G,MG,SL,fp){
+    const s=new VB(),p=new VB(),PN=new THREE.Group();
+    G.add(fpArm(fp,.2,-.3,-.42,.4,.15));
+    voxGrenade(s,.2,-.22,-.5,false);voxPin(p,.2,-.22,-.5);
+    SL.add(s.mesh());PN.add(p.mesh());G.add(PN);
+    const la=fpArm(fp,-.28,-.7,-.4,.5,-.3,true);la.visible=false;
+    return {la,pn:PN,lt:V3(0,0,0),mz:[.2,-.2,-.6]};
+  }
+  const ADSV={pistol:[-.2,.1,.15],rifle:[-.13,.1,.2]};   // ngắm bằng chuột phải (không phải súng ngắm): đưa súng vào giữa màn hình
   function buildVM(key){
-    fpMat=new THREE.MeshLambertMaterial({vertexColors:true,emissive:0x1e1e1e,fog:false,depthTest:false,depthWrite:false});
-    vm=new THREE.Group();vm.visible=false;camera.add(vm);
-    ORDER.forEach(t=>{const g=new THREE.Group();g.rotation.y=Math.PI;g.add(gunMesh(t,fpMat));if(MUZ[t]){const f=flashMesh(true);f.position.set(0,.045,MUZ[t]);g.add(f);flashFp[t]=f}g.visible=false;vm.add(g);fpGun[t]=g});
-    const fp=Soldier.fp(key);armR=armMesh(fp);armL=armMesh(fp);vm.add(armR,armL);
+    GLASS_M=new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:.72,depthWrite:false});GLASS_G=new THREE.CircleGeometry(1,28);
+    vmMat=new THREE.ShaderMaterial({vertexColors:true,uniforms:{uUp:{value:V3(0,1,0)},uSun:{value:V3(.4,.8,.3)}},
+      vertexShader:'varying vec3 vC,vN;void main(){vC=color;vN=normalize(normalMatrix*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+      fragmentShader:'uniform vec3 uUp,uSun;varying vec3 vC,vN;void main(){vec3 n=normalize(vN);float h=dot(n,uUp)*.5+.5;vec3 hemi=mix(vec3(1.,.839,.902),vec3(1.),h)*1.05;float d=max(dot(n,uSun),0.)*.5;gl_FragColor=vec4(vC*(hemi+d)+vec3(.118),1.);}'});   // = đèn bán cầu 1.05 + mặt trời .5 + emissive .118 của game gốc
+    vm=new THREE.Group();vm.visible=false;
+    const fp=Soldier.fp(key),B={pistol:bPistol,rifle:bRifle,sniper:bSniper,grenade:bGrenade};
+    FPW={};
+    ORDER.forEach(t=>{
+      const root=new THREE.Group(),G=new THREE.Group(),MG=new THREE.Group(),SL=new THREE.Group();G.add(MG,SL);root.add(G);
+      const wb=B[t](G,MG,SL,fp);root.add(wb.la);
+      const f=flashMesh(true);f.position.set(wb.mz[0],wb.mz[1],wb.mz[2]);f.scale.set(1.2,1.2,1.2);G.add(f);flashFp[t]=f;
+      const w=Object.assign(wb,{root,G,MG,SL,lb:wb.la.position.clone(),mb:MG.position.clone(),pistol:t==='pistol'||t==='grenade'});
+      w.ho=V3(wb.lt.x-w.mb.x,(wb.lt.y-w.mb.y)*.5,wb.lt.z-w.mb.z);
+      root.visible=false;vm.add(root);FPW[t]=w;
+    });
+    camera.add(vm);
+    vm.traverse(o=>{o.layers.set(1);if(o.isMesh){o.frustumCulled=false;if(!o.userData.glass&&!o.userData.vkfx)o.material=vmMat}});
   }
-  const _mid=V3(0,0,0),_wt=V3(0,0,0),_d=V3(0,0,0);
-  function limb(m,from,to){   // kéo dài cánh tay từ vai tới bàn tay (cả hai toạ độ theo vm)
-    _mid.copy(to).add(from).multiplyScalar(.5);m.position.copy(_mid);
-    _wt.copy(to).applyMatrix4(vm.matrixWorld);m.lookAt(_wt);
-    m.scale.set(1,1,Math.max(.05,from.distanceTo(to)));
+  const _v1=V3(0,0,0),_v3=V3(0,0,0),_v5=V3(0,0,0),POUCH=V3(-.32,-.45,.3),MDN=.25;
+  const e3=x=>x*x*(3-2*x),cl3=(u,a,b)=>Math.min(1,Math.max(0,(u-a)/(b-a)));
+  function magPath(g,u,out){
+    const mb=g.mb,dn=_v5.copy(mb),po=_v3.copy(mb).add(POUCH);dn.y-=MDN;
+    if(u<.30)return out.lerpVectors(mb,dn,e3(cl3(u,.12,.30)));
+    if(u<.48)return out.lerpVectors(dn,po,e3(cl3(u,.30,.48)));
+    if(u<.60)return out.lerpVectors(po,dn,e3(cl3(u,.48,.60)));
+    return out.lerpVectors(dn,mb,e3(cl3(u,.60,.72)));
   }
   function fpUpdate(dt,moving,visible){
     vm.visible=visible;
     if(!visible)return;
-    const t=K.cur,g=fpGun[t];
-    ORDER.forEach(u=>fpGun[u].visible=(u===t));
+    const t=K.cur,g=FPW[t],G=g.G;
+    ORDER.forEach(u=>FPW[u].root.visible=(u===t));
     K.bob+=dt*(moving?9:2);
     const bobY=moving?Math.sin(K.bob)*.012:Math.sin(K.bob)*.003,bobX=moving?Math.cos(K.bob*.5)*.008:0;
     K.sx+=(Math.max(-1,Math.min(1,K.mx*.02))-K.sx)*Math.min(1,dt*8);K.sy+=(Math.max(-1,Math.min(1,K.my*.02))-K.sy)*Math.min(1,dt*8);K.mx=K.my=0;
     const draw=K.drawT>0?K.drawT/.35:0;
-    vm.position.set(bobX-K.sx*.03,bobY-draw*.45+K.sy*.02,0);
+    vm.position.set(bobX-K.sx*.03,-.35+bobY-draw*.45+K.sy*.02,0);
     vm.rotation.set(K.sy*.04,K.sx*.05,0);
-    const p=G0[t],a=K.aim;
-    g.position.set(p[0]*(1-a*.88),p[1]*(1-a*.45),p[2]);
-    let tilt=0;if(K.relT>0){tilt=Math.sin((1-K.relT/K.relMax)*Math.PI);g.position.y-=tilt*.1}
-    g.rotation.set(tilt*.5-K.kick*.1,Math.PI,-tilt*.6);g.position.z+=K.kick*.06;
     for(const u in flashFp)flashFp[u].visible=(u===t&&K.flashT>0);
-    vm.updateMatrix();vm.updateMatrixWorld(true);g.updateMatrix();
-    limb(armR,_c.set(.55,-.62,.12),_d.copy(g.position));armR.visible=true;
-    const fg=GUN[t].fg;
-    if(fg){_b.set(fg[0],fg[1],fg[2]).applyMatrix4(g.matrix);limb(armL,_c.set(-.55,-.62,.12),_b);armL.visible=true}
-    else armL.visible=false;
+    if(t==='grenade'){
+      g.la.visible=false;g.MG.visible=false;
+      if(K.throwT>0){const u=1-K.throwT/.22,tt=e3(Math.min(1,u/.8));G.position.set(.04*(1-tt),.14-.26*tt,.3-.7*tt);G.rotation.set(.55-1.05*tt,0,0);g.SL.visible=true;g.pn.visible=false}
+      else if(K.hold>=0){
+        const w=e3(Math.min(1,K.hold/.25)),u=Math.min(1,K.hold/.6);
+        G.position.set(.04*w,.14*w,.3*w);G.rotation.set(.55*w,0,0);g.SL.visible=true;
+        const pl=e3(cl3(u,.45,.7)),pulled=u>=.7;g.pn.position.x=-.16*pl;g.pn.visible=!pulled;
+        if(u<.1)g.la.visible=false;
+        else{g.la.visible=u<1;G.updateMatrix();_v1.set(.165,-.105,-.5).applyMatrix4(G.matrix).add(_v3.set(-.03,-.06,.07));
+          const h=g.la.position;h.lerpVectors(g.lb,_v1,e3(cl3(u,.1,.45)));h.x-=.16*pl;h.lerp(g.lb,e3(cl3(u,.78,1)))}
+      }else{G.position.set(0,0,0);G.rotation.set(0,0,0);g.SL.visible=!(K.gcd>0);g.pn.visible=!(K.gcd>0);g.pn.position.x=0}
+      return;
+    }
+    let sl=0;
+    if(K.relT>0){
+      const u=Math.min(1,1-K.relT/K.relMax),tl=e3(cl3(u,0,.12))*(1-e3(cl3(u,.74,.86)));
+      G.rotation.set(.35*tl,0,-.5*tl);G.position.set(-.06*tl,-.12*tl,.015*Math.sin(Math.PI*cl3(u,.72,.78)));G.updateMatrix();
+      magPath(g,u,g.MG.position);g.MG.visible=u<.3||u>=.48;
+      const sm=t==='pistol'?.07:t==='sniper'?.1:.08;sl=sm*e3(cl3(u,.82,.9))*(1-e3(cl3(u,.92,.95)));
+      g.la.visible=true;const h=g.la.position;
+      if(u<.12)h.lerpVectors(g.lb,_v1.copy(g.MG.position).add(g.ho).applyMatrix4(G.matrix),e3(cl3(u,0,.12)));
+      else if(u<.72)h.copy(g.MG.position).add(g.ho).applyMatrix4(G.matrix);
+      else if(u<.82)h.lerpVectors(_v1.copy(g.mb).add(g.ho),g.sg,e3(cl3(u,.72,.82))).applyMatrix4(G.matrix);
+      else if(u<.95){h.copy(g.sg);h.z+=sl;h.applyMatrix4(G.matrix)}
+      else h.lerpVectors(_v1.copy(g.sg).applyMatrix4(G.matrix),g.lb,e3(cl3(u,.95,1)));
+    }else{
+      G.rotation.set(0,0,0);G.position.set(0,0,0);g.MG.visible=true;g.MG.position.copy(g.mb);
+      g.la.position.copy(g.lb);g.la.visible=!g.pistol;
+      if(K.kick>0)sl=(t==='pistol'?.04:t==='sniper'?.1:.05)*Math.sin(Math.PI*(1-Math.min(1,K.kick)));
+    }
+    g.SL.position.z=sl;
+    const a=K.aim,av=t==='sniper'?g.ads:(ADSV[t]?V3(ADSV[t][0],ADSV[t][1],ADSV[t][2]):null);
+    if(av&&a>0&&K.relT<=0){
+      const x=e3(Math.min(1,a/.7)),z=e3(cl3(a,.3,1));
+      G.position.x+=av.x*x;G.position.y+=av.y*x;G.position.z+=av.z*z;
+      g.la.position.x+=av.x*x;g.la.position.y+=av.y*x;g.la.position.z+=av.z*z;
+    }
+    G.position.z+=K.kick*.06;G.rotation.x-=K.kick*.1;
   }
   // ---- góc nhìn thứ 3: súng trong tay + súng đeo ----
   function attach(m,key){
@@ -210,7 +345,7 @@ window.VisitKit=(function(){
   function muzzlePos(t,out){
     const tp=!!(avatar&&avatar.visible);
     if(tp&&flashTp[t]){flashTp[t].parent.updateWorldMatrix(true,false);return flashTp[t].getWorldPosition(out)}
-    camera.updateMatrixWorld();return out.set(.18,-.16,-1.05).applyMatrix4(camera.matrixWorld);
+    camera.updateMatrixWorld(true);if(flashFp[t])return flashFp[t].getWorldPosition(out);return out.set(.18,-.16,-1.05).applyMatrix4(camera.matrixWorld);
   }
   function shoot(){
     const t=K.cur,F=FIRE[t];if(!F||K.cd>0||K.relT>0||K.drawT>0)return;
@@ -411,7 +546,7 @@ window.VisitKit=(function(){
     grenTick(dt);fxUpdate(dt);botsTick(dt);
   }
   function flashMesh(fp){
-    const f=new THREE.Mesh(new THREE.BoxGeometry(.13,.13,.06),new THREE.MeshBasicMaterial({color:0xffc84a,transparent:true,opacity:.95,blending:THREE.AdditiveBlending,depthWrite:false,depthTest:!fp,fog:false}));
+    const f=new THREE.Mesh(new THREE.BoxGeometry(.13,.13,.06),new THREE.MeshBasicMaterial({color:0xffc84a,transparent:true,opacity:.95,blending:THREE.AdditiveBlending,depthWrite:false,depthTest:!fp,fog:false,toneMapped:false}));
     f.visible=false;f.frustumCulled=false;f.renderOrder=1002;f.userData.vkfx=true;return f;
   }
   // ---- nhảy / lướt / đổi súng / nạp đạn ----
@@ -465,7 +600,21 @@ window.VisitKit=(function(){
   function hook(){
     if(K.hooked||typeof renderer==='undefined'||!renderer)return;
     K.hooked=true;const orig=renderer.render.bind(renderer);
-    renderer.render=function(s,c){tick();return orig(s,c)};
+    const inv=new THREE.Matrix4();
+    renderer.render=function(s,c){
+      tick();const r=orig(s,c);
+      if(vm&&vm.visible&&!window.__visitPaused&&c===camera){   // lượt 2: chỉ vẽ tay + súng (layer 1) sau khi xoá depth
+        const bg=s.background,ac=renderer.autoClear,fg=s.fog;
+        try{
+          camera.updateMatrixWorld();inv.copy(camera.matrixWorld).invert();
+          vmMat.uniforms.uUp.value.set(0,1,0).transformDirection(inv);vmMat.uniforms.uSun.value.set(5,10,3).normalize().transformDirection(inv);
+          s.background=null;s.fog=null;renderer.autoClear=false;renderer.clearDepth();camera.layers.set(1);
+          orig(s,c);
+        }catch(e){if(!window.__vkErr2){window.__vkErr2=1;console.warn('[visit-kit] lượt vẽ súng lỗi',e)}}
+        finally{camera.layers.set(0);s.background=bg;s.fog=fg;renderer.autoClear=ac}
+      }
+      return r;
+    };
   }
   // ---- phím / chuột ----
   addEventListener('keydown',e=>{

@@ -3,8 +3,7 @@
 // Đặt ở js/visit-portal.js. Được nạp bởi js/visit-mode.js (sau visit-kit.js). Không sửa file nào khác của game 1 ngoài
 // js/visit-mode.js (thêm 1 dòng nạp file này) và js/world/sky.js (ép ban ngày + trời quang khi ?visit=1).
 //
-// 1) MÀU: game 1 vốn dịu / nhạt (tone mapping ACES + sương mù trắng + thời tiết theo đồng hồ máy). Ở chế độ tham quan:
-//    tone mapping tuyến tính, sương mù lùi xa, tăng bão hoà + tương phản -> sắc nét, rực rỡ gần với Block Arena.
+// 1) MÀU: thế giới này giữ NGUYÊN GỐC (không còn chỉnh tone mapping / sương mù / bão hoà). Chỉ nhân vật, bot, súng + tay (visit-kit.js, soldier.js) giữ màu đậm như game gốc.
 // 2) CỔNG: 1 cổng không gian đứng trước mặt người chơi lúc mới tới (vành voxel xanh + vòng xoáy tia lửa + cửa sổ nhìn
 //    thấy cảnh Block Arena). Cổng tồn tại mãi. Bước qua -> postMessage({type:'optimum-rift-back'}) cho game cha
 //    (rift.js) để về lại Block Arena. Game cha giữ iframe này sống sẵn (ẩn): nó dừng vẽ + tắt âm thanh khi người chơi ở Block Arena
@@ -166,6 +165,7 @@
       em.fog=false;
       const emb=new THREE.Points(eg,em);emb.frustumCulled=false;emb.renderOrder=7;g.add(emb);
       g.scale.setScalar(.55*SIZE);
+      g.traverse(o=>{if(o.material)o.material.toneMapped=false});   // cổng giữ màu xanh / lửa rực dù thế giới có tone mapping ACES
       cfg.scene.add(g);
       return {g,im,hm,bg,sp,sg,sm,pd,lt,wm,win,ring,rm,ring2,rm2,eg,em,ep,ec,es,ed,m4:new THREE.Matrix4(),cc,age:0,acc:1,s:0,
         x,z,nx:Math.sin(yawN),nz:Math.cos(yawN),ry:y};
@@ -290,7 +290,7 @@
     if(typeof scene!=='undefined'&&scene&&typeof renderer!=='undefined'&&renderer&&typeof camera!=='undefined'&&camera&&typeof player!=='undefined'&&window.THREE){
       clearInterval(id);
       try{
-        grade();place();
+        place();   // KHÔNG chỉnh màu thế giới nữa: thế giới giữ nguyên gốc, chỉ nhân vật + bot + súng (visit-kit.js / soldier.js) giữ màu đậm
         setTimeout(()=>{if(!readySent){readySent=true;toParent({type:'optimum-ready'})}},4000);   // dự phòng: iframe ẩn có thể không vẽ khung nào -> vẫn báo sẵn sàng
         const orig=renderer.render;   // bọc renderer.render: mỗi khung hình cập nhật cổng trước khi vẽ
         renderer.render=function(s,c){
