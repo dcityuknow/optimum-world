@@ -10,6 +10,7 @@
 // new VB(true) = nhớ lại từng khối (dùng cho bot để vỡ mảnh khi chết). shell=true = chỉ tạo lớp vỏ ngoài, bỏ khối ruột.
 // Cách dùng: box(tâm x,y,z, rộng,cao,dài, màu hoặc hàm màu, cỡ khối) · cyl(...) hình trụ · ell(...) hình cầu/elip
 const VMAT=new THREE.MeshLambertMaterial({vertexColors:true,emissive:0x1e1e1e});
+VMAT.toneMapped=false;   // nhân vật / bot / súng KHÔNG bị tone mapping ACES của thế giới này làm nhạt: giữ màu đậm như game gốc
 // KHOẢNG HỞ GIỮA CÁC KHỐI: 1 = SÁT NHAU (không còn khe) -> mặt chung của 2 khối kề nhau trùng khít và bị BỎ HẲN (mesh() / meshLOD() bên dưới).
 // Bản cũ dùng .93 (khe 7%, nên mặt chung không trùng khít và không bỏ được). Thử lại kiểu cũ: thêm ?vgap=.93 vào địa chỉ trang.
 const VGAP=(()=>{const v=parseFloat(new URLSearchParams(location.search).get('vgap'));return v>0&&v<=1?v:1})();
@@ -416,6 +417,6 @@ function build(def){
 window.Soldier={list:CH,VB:VB,
   make:function(k){return build(BYK[k]||CH[0])},
   // tay áo / màu da / găng cho góc nhìn thứ nhất (giống CharPick.fp() của game 2)
-  fp:function(k){const c=BYK[k]||CH[0];return {sleeve:camoFn(c.uni.pal,c.uni.kind,c.uni.seed,1.7),skin:[c.skin,shade(c.skin,.95)],glove:c.glove}}
+  fp:function(k){const c=BYK[k]||CH[0];return {sleeve:camoFn(c.uni.pal,c.uni.kind,c.uni.seed,1.7),cuff:shade(c.uni.pal[Math.min(1,c.uni.pal.length-1)],.55),skin:[c.skin,shade(c.skin,.95)],glove:c.glove,band:c.belt}}
 };
 })();
