@@ -9,8 +9,12 @@
 // Lõi dựng mô hình bằng khối rubik nhỏ (voxel). Mỗi bộ phận gộp thành 1 mesh nên vẫn nhẹ dù hàng nghìn khối.
 // new VB(true) = nhớ lại từng khối (dùng cho bot để vỡ mảnh khi chết). shell=true = chỉ tạo lớp vỏ ngoài, bỏ khối ruột.
 // Cách dùng: box(tâm x,y,z, rộng,cao,dài, màu hoặc hàm màu, cỡ khối) · cyl(...) hình trụ · ell(...) hình cầu/elip
-const VMAT=new THREE.MeshLambertMaterial({vertexColors:true,emissive:0x1e1e1e});
-VMAT.toneMapped=false;   // nhân vật / bot / súng KHÔNG bị tone mapping ACES của thế giới này làm nhạt: giữ màu đậm như game gốc
+// Vật liệu riêng: đèn bán cầu 1.05 + mặt trời .5 + emissive .118 CỐ ĐỊNH theo hướng thế giới (đúng như game gốc), không chịu tone mapping / sương mù / ánh sáng của thế giới Optimum
+// -> lính, bot, súng đeo luôn đậm đà như Block Arena.
+const VMAT=new THREE.ShaderMaterial({vertexColors:true,
+  uniforms:{uUp:{value:new THREE.Vector3(0,1,0)},uSun:{value:new THREE.Vector3(5,10,3).normalize()}},
+  vertexShader:'varying vec3 vC,vN;void main(){vC=color;vN=normalize(mat3(modelMatrix)*normal);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
+  fragmentShader:'uniform vec3 uUp,uSun;varying vec3 vC,vN;void main(){vec3 n=normalize(vN);float h=dot(n,uUp)*.5+.5;vec3 hemi=mix(vec3(1.,.839,.902),vec3(1.),h)*1.05;float d=max(dot(n,uSun),0.)*.5;gl_FragColor=vec4(vC*(hemi+d)+vec3(.118),1.);}'});
 // KHOẢNG HỞ GIỮA CÁC KHỐI: 1 = SÁT NHAU (không còn khe) -> mặt chung của 2 khối kề nhau trùng khít và bị BỎ HẲN (mesh() / meshLOD() bên dưới).
 // Bản cũ dùng .93 (khe 7%, nên mặt chung không trùng khít và không bỏ được). Thử lại kiểu cũ: thêm ?vgap=.93 vào địa chỉ trang.
 const VGAP=(()=>{const v=parseFloat(new URLSearchParams(location.search).get('vgap'));return v>0&&v<=1?v:1})();

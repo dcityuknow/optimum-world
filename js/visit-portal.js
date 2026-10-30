@@ -254,7 +254,7 @@
     if(onGround&&Math.abs(dn)<.9&&dl<G.RB*CFG.size*.9){
       sent=true;
       let followers=[];   // bot còn sống gần cổng chạy theo người chơi về Block Arena (tới nơi sau dist/5,5 giây)
-      try{if(window.VisitKit&&VisitKit.takeBots)followers=VisitKit.takeBots(p.x,p.z,45,16).map(o=>({hp:o.hp,maxhp:o.maxhp,delay:Math.min(6,Math.max(.4,o.dist/5.5))}))}catch(e){}
+      try{if(window.VisitKit&&VisitKit.takeBots)followers=VisitKit.takeBots(p.x,p.z,45,16).map(o=>({hp:o.hp,maxhp:o.maxhp,nm:o.nm,delay:Math.min(6,Math.max(.4,o.dist/5.5))}))}catch(e){}
       toParent({type:'optimum-rift-back',bots:followers});
       setTimeout(()=>{sent=false},2500);   // phòng khi game cha chưa kịp xử lý thì vẫn thử lại được
     }
@@ -272,7 +272,7 @@
     }
     else if(e.data.type==='rift-bot'){   // 1 bot từ Block Arena vừa chạy qua cổng sang đây: xuất hiện ở cổng, đuổi theo người chơi
       try{if(p&&window.VisitKit&&VisitKit.spawnBot){const lat=(Math.random()-.5)*G.RB*CFG.size*1.2;
-        VisitKit.spawnBot(p.x+p.nx*1.2+p.nz*lat,p.z+p.nz*1.2-p.nx*lat,+e.data.hp||100,+e.data.maxhp||100)}}catch(err){}
+        VisitKit.spawnBot(p.x+p.nx*1.2+p.nz*lat,p.z+p.nz*1.2-p.nx*lat,+e.data.hp||100,+e.data.maxhp||100,e.data.nm)}}catch(err){}
     }
     else if(e.data.type==='rift-resume'){
       paused=false;window.__visitPaused=false;sent=false;t0=performance.now();setAudio(true);

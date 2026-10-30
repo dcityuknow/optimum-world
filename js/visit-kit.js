@@ -204,7 +204,7 @@ window.VisitKit=(function(){
     const bobY=moving?Math.sin(K.bob)*.012:Math.sin(K.bob)*.003,bobX=moving?Math.cos(K.bob*.5)*.008:0;
     K.sx+=(Math.max(-1,Math.min(1,K.mx*.02))-K.sx)*Math.min(1,dt*8);K.sy+=(Math.max(-1,Math.min(1,K.my*.02))-K.sy)*Math.min(1,dt*8);K.mx=K.my=0;
     const draw=K.drawT>0?K.drawT/.35:0;
-    vm.position.set(bobX-K.sx*.03,-.35+bobY-draw*.45+K.sy*.02,0);
+    vm.position.set(bobX-K.sx*.03,bobY-draw*.45+K.sy*.02,0);   // game gốc: -.35 chỉ là giá trị khởi tạo, sau đó main.js kéo về ~0 (chỉ còn nhún khi chạy)
     vm.rotation.set(K.sy*.04,K.sx*.05,0);
     for(const u in flashFp)flashFp[u].visible=(u===t&&K.flashT>0);
     if(t==='grenade'){
@@ -481,7 +481,22 @@ window.VisitKit=(function(){
     hurtEl.style.transition='none';hurtEl.style.opacity='1';
     requestAnimationFrame(()=>requestAnimationFrame(()=>{hurtEl.style.transition='opacity .45s';hurtEl.style.opacity='0'}));
   }
-  function spawnBot(x,z,hp,maxhp){
+  // Tên "@TÊN" trên đầu bot (chép từ entities/botnames.js của game gốc): chữ nâu ánh kim, hiện khi cách camera <= 40m
+  const NT={W:512,H:64,h:.42,y:2.27,range:40};
+  function nameTag(b,name){
+    const c=document.createElement('canvas');c.width=NT.W;c.height=NT.H;const g=c.getContext('2d'),W=NT.W,H=NT.H,txt='@'+name;
+    g.font='700 34px "Segoe UI","Noto Sans",Arial,sans-serif';
+    let w=g.measureText(txt).width;const k=w>W-44?(W-44)/w:1;
+    g.save();g.translate(W/2,H/2+1);g.scale(k,1);g.textAlign='center';g.textBaseline='middle';g.lineJoin='round';g.lineWidth=6;
+    g.shadowColor='rgba(0,0,0,.65)';g.shadowBlur=5;g.shadowOffsetY=2;g.strokeStyle='rgba(48,26,12,.92)';g.strokeText(txt,0,0);
+    g.shadowColor='transparent';g.shadowBlur=0;g.shadowOffsetY=0;
+    const gr=g.createLinearGradient(0,-18,0,18);
+    gr.addColorStop(0,'#fff3dc');gr.addColorStop(.3,'#e9bd8c');gr.addColorStop(.5,'#c08a58');gr.addColorStop(.52,'#8d5830');gr.addColorStop(.78,'#c99762');gr.addColorStop(1,'#f3d3a6');
+    g.fillStyle=gr;g.fillText(txt,0,0);g.lineWidth=1;g.strokeStyle='rgba(255,236,200,.45)';g.strokeText(txt,0,0);g.restore();
+    const tex=new THREE.CanvasTexture(c),spr=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthWrite:false,fog:false,toneMapped:false}));
+    spr.scale.set(NT.h*W/H,NT.h,1);spr.position.set(0,NT.y,0);spr.userData.vkfx=true;b.g.add(spr);b.tag=spr;b.tagTex=tex;
+  }
+  function spawnBot(x,z,hp,maxhp,nm){
     if(typeof Soldier==='undefined'||RBOT.list.length>=40)return null;
     prepBots();if(!botTpl)return null;
     const g=botTpl.clone(true);RBOT.n++;
@@ -489,9 +504,10 @@ window.VisitKit=(function(){
     const b={g,m,x,z,hp:hp||100,maxhp:maxhp||100,t:Math.random()*6,cd:.8+Math.random()*1.2,stuck:0,melee:0,id:RBOT.n};
     g.traverse(o=>{if(o.isMesh)o.userData.rbot=b});
     g.position.set(x,0,z);scene.add(g);RBOT.list.push(b);
+    if(nm){b.nm=String(nm).slice(0,24);try{nameTag(b,b.nm)}catch(e){}}
     return b;
   }
-  function removeBot(b){scene.remove(b.g);const i=RBOT.list.indexOf(b);if(i>=0)RBOT.list.splice(i,1)}
+  function removeBot(b){if(b.tagTex)b.tagTex.dispose();scene.remove(b.g);const i=RBOT.list.indexOf(b);if(i>=0)RBOT.list.splice(i,1)}
   function botDie(b){
     fxInit();
     for(let i=0;i<40;i++)spark(b.x+(Math.random()-.5)*.6,.3+Math.random()*1.5,b.z+(Math.random()-.5)*.6,(Math.random()-.5)*9,Math.random()*8,(Math.random()-.5)*9,.5+Math.random()*.6,.07+Math.random()*.1,i%3?0xb02030:0x3a3a48,20);
@@ -521,6 +537,7 @@ window.VisitKit=(function(){
       b.t+=dt*10*mv;const sw=Math.sin(b.t)*.9*mv;
       if(b.m.legL)b.m.legL.rotation.x=sw;if(b.m.legR)b.m.legR.rotation.x=-sw;if(b.m.armL)b.m.armL.rotation.x=-sw*.8;if(b.m.armR)b.m.armR.rotation.x=sw*.8;
       b.g.position.set(b.x,Math.abs(Math.sin(b.t))*.06*mv,b.z);b.g.rotation.y=Math.atan2(dx,dz);
+      if(b.tag){const cx=camera.position.x-b.x,cy=camera.position.y-1,cz=camera.position.z-b.z;b.tag.visible=cx*cx+cy*cy+cz*cz<NT.range*NT.range}
       b.cd-=dt;
       if(b.cd<=0&&d<24){b.cd=1.2+Math.random()*1.3;botShot(b,d)}
       if(d<=1.9){b.melee-=dt;if(b.melee<=0){b.melee=.7;hurtFlash();sfx('click')}}
@@ -529,7 +546,7 @@ window.VisitKit=(function(){
   // lấy các bot còn sống trong bán kính R quanh (cx,cz) ra khỏi thế giới này (để theo người chơi về game kia)
   function takeBots(cx,cz,R,max){
     const c=RBOT.list.map(b=>({b,d:Math.hypot(b.x-cx,b.z-cz)})).filter(o=>o.d<=R).sort((a,b)=>a.d-b.d).slice(0,max),out=[];
-    for(const o of c){out.push({hp:o.b.hp,maxhp:o.b.maxhp,dist:o.d});removeBot(o.b)}
+    for(const o of c){out.push({hp:o.b.hp,maxhp:o.b.maxhp,nm:o.b.nm,dist:o.d});removeBot(o.b)}
     return out;
   }
   // ---- nhịp mỗi khung hình của phần bắn súng ----
