@@ -288,7 +288,58 @@ window.VisitKit=(function(){
   // Người chơi hạ được bằng đạn (đầu ăn nhiều sát thương hơn) và lựu đạn. Khi người chơi bước qua cổng về lại Block Arena,
   // bot còn sống gần cổng chạy theo (xem takeBots + visit-portal.js).
   const RBOT={list:[],n:0};
-  const BOT_KEYS=['ru','us','ng','vn'];
+  // Mô hình bot GỐC của game 2 (entities/bot-model.js): bộ đồ đen, đầu hồng, kính đen có logo vô cực, tai nghe, mũ nhiều màu + ăng-ten đỏ.
+  // Cùng engine voxel (Soldier.VB = VB của game 2) nên chép nguyên các khối. Dựng 1 lần rồi clone (dùng chung geometry) cho nhẹ.
+  let botTpl=null;
+  function buildBotTpl(){
+    const VB=Soldier.VB,tri=(a,b,c)=>(i,j,k)=>[a,b,c][(i+j+k)%3];
+    const g=new THREE.Group(),pivot=(n,x,y)=>{const q=new THREE.Group();q.name=n;q.position.set(x,y,0);g.add(q);return q},add=(par,vb)=>par.add(vb.mesh());
+    const RED=tri(0x26262d,0x30303a,0x1d1d24),PINK=tri(0xff7a88,0xff95a0,0xf0606f),DRED=tri(0x15151a,0x1c1c22,0x101014),BLU=tri(0x2d3340,0x384050,0x252b36),ORG=tri(0x3a3a44,0x45454f,0x2f2f38);
+    // thân
+    const T=new VB();
+    T.box(0,.95,0,.7,.7,.4,(i,j,k,nx,ny,nz)=>{
+      if(j<2)return (i+k)&1?0xffd23f:0xffe680;
+      if(k===nz-1){const d=Math.abs(i-(nx-1)/2)+Math.abs(j-8);if(d<=1)return 0xff4d5e;if(d<=3)return 0xffd23f}
+      return RED(i,j,k)},.05,true);
+    T.box(0,.66,.215,.14,.1,.03,0xffd23f,.02);T.box(0,.66,.235,.05,.05,.02,0x4d9dff,.015);
+    T.box(-.2,.98,.212,.07,.6,.03,0x3a3850,.02);T.box(.2,.98,.212,.07,.6,.03,0x3a3850,.02);
+    T.box(0,1.32,0,.3,.06,.28,0x3a3850,.03,true);
+    T.box(0,1.0,-.28,.42,.44,.16,BLU,.045,true);T.box(0,1.15,-.29,.44,.1,.18,0x3a4256,.04,true);
+    T.box(0,.88,-.375,.28,.16,.03,0xffd23f,.03,true);T.box(0,1.05,-.375,.06,.06,.02,0xff4d5e,.02);
+    add(g,T);
+    // đầu: kính đen + logo vô cực trắng, miệng có răng, má hồng, tai nghe, mũ, ăng-ten
+    const H=new VB(),HY=1.6,VY=1.65,VF=.32;
+    H.box(0,HY,0,.56,.56,.56,PINK,.05,true);
+    H.box(0,VY,.27,.6,.28,.1,(i,j,k)=>(i+j+k)&1?0x14141b:0x1e1e27,.04,true);
+    {const LW=.46,LS=.0139,nx=Math.round(LW/LS),ny=Math.round(nx/1.8207),LH=LW/1.8207,ro=LW*.25,ri=LW*.125;
+      for(let j=0;j<ny;j++)for(let i=0;i<nx;i++){
+        const px=(-.5+(i+.5)/nx)*LW,py=(.5-(j+.5)/ny)*LH;let on=false;
+        for(const cx of[-ro,ro]){const r=Math.hypot(px-cx,py);if(r<ro&&r>ri){on=true;break}}   // 2 vòng tròn cạnh nhau = dấu vô cực
+        if(on)H.cube(px,VY+py,VF+.01,LS*.95,LS*.95,.02,((i+j)&1)?0xf4f4f4:0xdcdcdc,i,j,0);
+      }}
+    H.box(0,1.4,.292,.28,.06,.02,0x2b2a3a,.01);H.box(0,1.4,.305,.25,.035,.01,(i)=>i&1?0xffffff:-1,.02);
+    for(const sx of[-.2,.2])H.box(sx,1.45,.286,.07,.04,.012,0xff9fbf,.02);
+    for(const sx of[-1,1]){H.cyl(sx*.3,1.6,0,.08,.05,0xffd23f,.02,'x');H.cyl(sx*.325,1.6,0,.045,.02,0x3a3850,.015,'x')}
+    H.box(0,1.91,0,.4,.06,.4,tri(0xffd23f,0x4d9dff,0x7fe0a0),.04,true);H.box(0,1.89,.26,.4,.03,.14,0xff9a3c,.03);
+    H.cyl(.1,2.0,0,.012,.12,0x3a3850,.012,'y');H.ell(.1,2.09,0,.035,.035,.035,0xff2a4d,.015);
+    add(g,H);
+    const lL=pivot('lL',-.17,.6),lR=pivot('lR',.17,.6),aL=pivot('aL',-.46,1.27),aR=pivot('aR',.46,1.27);
+    for(const l of[lL,lR]){
+      const v=new VB();
+      v.box(0,-.24,0,.3,.48,.32,DRED,.05,true);v.box(0,-.27,.175,.22,.14,.05,0xffd23f,.03);v.box(0,-.47,0,.32,.05,.34,0xffd23f,.025,true);
+      v.box(0,-.54,.05,.32,.12,.44,(i,j)=>j===0?0x3a3850:((i+j)&1?0xf4f4f8:0xe4e4ee),.04,true);v.box(0,-.54,.24,.3,.11,.06,0x4d9dff,.03);
+      add(l,v);
+    }
+    for(const a of[aL,aR]){
+      const v=new VB();
+      v.box(0,-.22,0,.22,.44,.26,RED,.05,true);v.box(0,-.47,0,.24,.06,.28,0xffd23f,.03,true);v.box(0,-.56,0,.2,.12,.24,ORG,.04,true);
+      v.box(0,-.6,.1,.18,.03,.05,0x3a3850,.02);
+      v.box(0,.02,0,.3,.1,.34,DRED,.05,true);v.box(0,.075,0,.3,.02,.34,0xffd23f,.02);
+      add(a,v);
+    }
+    return g;
+  }
+  function prepBots(){try{if(!botTpl&&typeof Soldier!=='undefined')botTpl=buildBotTpl()}catch(e){console.warn('[visit] dựng bot lỗi',e)}}
   let hurtEl=null;
   function hurtFlash(){
     if(!hurtEl){hurtEl=document.createElement('div');hurtEl.style.cssText='position:fixed;inset:0;pointer-events:none;z-index:6;opacity:0;transition:opacity .35s;box-shadow:inset 0 0 130px 40px rgba(255,20,20,.6)';document.body.appendChild(hurtEl)}
@@ -297,12 +348,12 @@ window.VisitKit=(function(){
   }
   function spawnBot(x,z,hp,maxhp){
     if(typeof Soldier==='undefined'||RBOT.list.length>=40)return null;
-    const m=Soldier.make(BOT_KEYS[(RBOT.n++)%BOT_KEYS.length]);
-    m.g.traverse(o=>{if(o.isMesh){o.material=o.material.clone();o.material.color.setHex(0xff6a6a)}});   // nhuộm đỏ: nhìn là biết bot thù địch
-    const gun=gunMesh('rifle');gun.scale.setScalar(.9);gun.position.set(.3,1.15,.42);m.g.add(gun);
-    const b={g:m.g,m,x,z,hp:hp||100,maxhp:maxhp||100,t:Math.random()*6,cd:.8+Math.random()*1.2,stuck:0,melee:0,id:RBOT.n};
-    m.g.traverse(o=>{if(o.isMesh)o.userData.rbot=b});
-    m.g.position.set(x,0,z);scene.add(m.g);RBOT.list.push(b);
+    prepBots();if(!botTpl)return null;
+    const g=botTpl.clone(true);RBOT.n++;
+    const m={g,legL:g.getObjectByName('lL'),legR:g.getObjectByName('lR'),armL:g.getObjectByName('aL'),armR:g.getObjectByName('aR')};
+    const b={g,m,x,z,hp:hp||100,maxhp:maxhp||100,t:Math.random()*6,cd:.8+Math.random()*1.2,stuck:0,melee:0,id:RBOT.n};
+    g.traverse(o=>{if(o.isMesh)o.userData.rbot=b});
+    g.position.set(x,0,z);scene.add(g);RBOT.list.push(b);
     return b;
   }
   function removeBot(b){scene.remove(b.g);const i=RBOT.list.indexOf(b);if(i>=0)RBOT.list.splice(i,1)}
@@ -333,7 +384,7 @@ window.VisitKit=(function(){
       }
       for(let j=0;j<L.length;j++){if(j===i)continue;const o=L[j],ox=b.x-o.x,oz=b.z-o.z,od=Math.hypot(ox,oz);if(od<.8&&od>1e-3){const k=(.8-od)*.5/od;if(!blocked(b.x+ox*k,b.z))b.x+=ox*k;if(!blocked(b.x,b.z+oz*k))b.z+=oz*k}}   // không chồng lên nhau
       b.t+=dt*10*mv;const sw=Math.sin(b.t)*.9*mv;
-      if(b.m.legL)b.m.legL.rotation.x=sw;if(b.m.legR)b.m.legR.rotation.x=-sw;if(b.m.armL)b.m.armL.rotation.x=-sw*.8;
+      if(b.m.legL)b.m.legL.rotation.x=sw;if(b.m.legR)b.m.legR.rotation.x=-sw;if(b.m.armL)b.m.armL.rotation.x=-sw*.8;if(b.m.armR)b.m.armR.rotation.x=sw*.8;
       b.g.position.set(b.x,Math.abs(Math.sin(b.t))*.06*mv,b.z);b.g.rotation.y=Math.atan2(dx,dz);
       b.cd-=dt;
       if(b.cd<=0&&d<24){b.cd=1.2+Math.random()*1.3;botShot(b,d)}
@@ -440,5 +491,5 @@ window.VisitKit=(function(){
   addEventListener('contextmenu',e=>e.preventDefault(),true);
   addEventListener('blur',()=>{K.aimOn=false;K.fireHeld=false;K.hold=-1});
   addEventListener('mousemove',e=>{K.mx+=e.movementX||0;K.my+=e.movementY||0},true);
-  return {attach:attach,state:K,select:select,reload:reload,tick:tick,shoot:shoot,gPin:gPin,gRelease:gRelease,spawnBot:spawnBot,takeBots:takeBots,bots:RBOT.list};
+  return {attach:attach,state:K,select:select,reload:reload,tick:tick,shoot:shoot,gPin:gPin,gRelease:gRelease,spawnBot:spawnBot,takeBots:takeBots,prepBots:prepBots,bots:RBOT.list};
 })();

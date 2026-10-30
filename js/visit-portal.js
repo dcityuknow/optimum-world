@@ -239,6 +239,7 @@
       if(free(cx,cz)&&free(cx+r,cz)&&free(cx-r,cz)&&free(cx,cz+r)&&free(cx,cz-r)){x=cx;z=cz;break}
     }
     p=G.build(x,0,z,Math.atan2(player.x-x,player.z-z));   // mặt cổng quay về phía người chơi
+    setTimeout(()=>{try{if(window.VisitKit&&VisitKit.prepBots)VisitKit.prepBots()}catch(e){}},2500);   // dựng sẵn mô hình bot (1 lần) cho khỏi khựng khi bot đầu tiên xuất hiện
   }
 
   function frame(){
