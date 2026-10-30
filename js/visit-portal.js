@@ -254,7 +254,7 @@
     if(onGround&&Math.abs(dn)<.9&&dl<G.RB*CFG.size*.9){
       sent=true;
       let followers=[];   // bot còn sống gần cổng chạy theo người chơi về Block Arena (tới nơi sau dist/5,5 giây)
-      try{if(window.VisitKit&&VisitKit.takeBots)followers=VisitKit.takeBots(p.x,p.z,45,16).map(o=>({hp:o.hp,maxhp:o.maxhp,nm:o.nm,delay:Math.min(6,Math.max(.4,o.dist/5.5))}))}catch(e){}
+      try{if(window.VisitKit&&VisitKit.takeBots)followers=VisitKit.takeBots(p.x,p.z,250,40).map(o=>({hp:o.hp,maxhp:o.maxhp,nm:o.nm,delay:Math.min(14,Math.max(.4,o.dist/5.5))}))}catch(e){}
       toParent({type:'optimum-rift-back',bots:followers,w:(window.VisitKit&&VisitKit.state)?VisitKit.state.cur:null});   // kèm súng đang cầm để game cha cầm đúng súng đó
       setTimeout(()=>{sent=false},2500);   // phòng khi game cha chưa kịp xử lý thì vẫn thử lại được
     }
