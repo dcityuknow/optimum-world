@@ -281,6 +281,7 @@
         player.x=x;player.z=z;player.yaw=Math.atan2(-p.nx,-p.nz);player.pitch=-.05;armed=false;   // quay mặt ra xa cổng: cổng nằm sau lưng
       }
       try{window.focus()}catch(e){}
+      try{window.dispatchEvent(new Event('resize'));renderer.render(scene,camera)}catch(err){}   // vẽ ngay 1 khung: khỏi đen màn hình trong lúc chờ requestAnimationFrame chạy lại
     }
   });
 
@@ -290,6 +291,7 @@
       clearInterval(id);
       try{
         grade();place();
+        setTimeout(()=>{if(!readySent){readySent=true;toParent({type:'optimum-ready'})}},4000);   // dự phòng: iframe ẩn có thể không vẽ khung nào -> vẫn báo sẵn sàng
         const orig=renderer.render;   // bọc renderer.render: mỗi khung hình cập nhật cổng trước khi vẽ
         renderer.render=function(s,c){
           try{frame()}catch(e){console.warn('[visit] cổng lỗi',e);p=null}
