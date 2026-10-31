@@ -31,7 +31,7 @@ window.VisitKit=(function(){
     const TPH={pistol:[.3,1.32,.62],rifle:[.28,1.2,.5],sniper:[.28,1.2,.5],grenade:[.28,1.12,.42]};      // chỗ tay phải nắm súng (toạ độ thân nhân vật, góc nhìn thứ 3)
   const SH_R=V3(.336,1.344,0),SH_L=V3(-.336,1.344,0),DOWN=V3(0,-1,0),ZAX=V3(0,0,1);
   const _a=V3(0,0,0),_b=V3(0,0,0),_c=V3(0,0,0);
-  const K={cur:'pistol',drawT:.35,relT:0,relMax:1.5,relFor:'pistol',ammo:{pistol:12,rifle:30,sniper:5},cd:0,gcd:0,fireHeld:false,kick:0,flashT:0,hold:-1,throwT:0,throwP:12,shake:0,aim:0,aimOn:false,jy:0,vy:0,slideT:0,slideCd:0,sd:{x:0,z:0},t0:performance.now(),bob:0,mx:0,my:0,sx:0,sy:0,toastT:0,model:null,charKey:'vn',hooked:false};
+  const K={cur:'pistol',drawT:.35,relT:0,relMax:1.5,relFor:'pistol',ammo:{pistol:12,rifle:30,sniper:5},cd:0,gcd:0,fireHeld:false,kick:0,flashT:0,hold:-1,throwT:0,throwP:12,shake:0,aim:0,aimOn:false,jy:0,vy:0,slideT:0,slideCd:0,slK:0,sd:{x:0,z:0},t0:performance.now(),bob:0,mx:0,my:0,sx:0,sy:0,toastT:0,model:null,charKey:'vn',hooked:false};
   let held={},slung={},vm=null,hudEl=null,hudSlots=[],hudAmmo=null,toastEl=null,scopeEl=null;
 
   function gunMesh(t,mat){
@@ -580,6 +580,37 @@ window.VisitKit=(function(){
     const sy=Math.sin(player.yaw),cy=Math.cos(player.yaw);
     K.sd.x=-sy*f+cy*s;K.sd.z=-cy*f-sy*s;K.slideT=.7;K.slideCd=1.1;
   }
+  // ---- LỘN NHÀO (Shift) góc nhìn thứ 3: chép từ player/thirdperson.js (rollPose / rollLift / slideDust) của game gốc ----
+  // chồm tới -> chúi đầu, co người thành khối tròn, lộn trọn 360° về phía trước theo HƯỚNG LĂN -> bật dậy. Hai tay ôm gối, chân gập, súng ra sau lưng, bụi bay.
+  const _sq=new THREE.Quaternion(),_se=new THREE.Euler(),_bp=V3(0,0,0);
+  let dustT=0;
+  function rollTP(dt){
+    const m=K.model;if(!m||!avatar)return;
+    const w=Math.min(1,K.slK*1.6),rolling=K.slideT>0;
+    if(K.slK<.02&&!rolling){m.g.rotation.set(0,0,0);m.g.position.set(0,0,0);m.g.scale.y=1;return}
+    const ru=rolling?1-K.slideT/.7:1,tk=e3(cl3(ru,.08,.3))*(1-e3(cl3(ru,.85,1)));
+    const lean=rolling?2*Math.PI*e3(cl3(ru,.08,.92))+.45*Math.sin(Math.PI*cl3(ru,0,.2)):0;
+    // thân quay theo hướng lăn (không phải hướng nhìn)
+    const hd0=player.yaw+Math.PI;let dh=Math.atan2(K.sd.x,K.sd.z)-hd0;dh-=Math.round(dh/(2*Math.PI))*2*Math.PI;
+    avatar.rotation.y=hd0+dh*K.slK;
+    m.g.rotation.set(lean,0,0);
+    m.g.position.set(0,.75-.75*Math.cos(lean),-.75*Math.sin(lean));   // giữ nguyên chỗ hông khi nghiêng
+    m.g.scale.y=1-.22*tk*K.slK;
+    // chân gập lên ngực, tay ôm gối
+    const tg=-1.55*tk;m.legL.rotation.x+=(tg-m.legL.rotation.x)*w;m.legR.rotation.x+=(tg-m.legR.rotation.x)*w;
+    const ax=-1.3-1.5*(1-tk);
+    _sq.setFromEuler(_se.set(ax,0,-.12));m.armL.quaternion.slerp(_sq,w);m.armL.scale.y+=(1-m.armL.scale.y)*w;
+    _sq.setFromEuler(_se.set(ax,0,.12));m.armR.quaternion.slerp(_sq,w);m.armR.scale.y+=(1-m.armR.scale.y)*w;
+    ORDER.forEach(u=>{held[u].visible=false;slung[u].visible=(u!=='grenade')});   // hai tay bận: súng đeo ra sau lưng
+    // lăn trên đất: điểm thấp nhất của thân luôn sát mặt đất
+    m.g.updateMatrixWorld(true);
+    const a=m.legL.rotation.x,fy=.75-.75*Math.cos(a),fz=-.75*Math.sin(a);let mn=1e9;
+    for(const[x,y,z]of[[0,1.7,.1],[0,.75,-.25],[0,1.3,-.25],[.14,fy,fz],[-.14,fy,fz]]){_bp.set(x,y,z).applyMatrix4(m.g.matrixWorld);if(_bp.y<mn)mn=_bp.y}
+    m.g.position.y+=((avatar.position.y-K.jy)+.04-mn)*w/avatar.scale.y;
+    // bụi lúc bật đi và lúc tiếp đất
+    if(rolling&&(ru<.12||ru>.6)){dustT-=dt;if(dustT<=0){dustT=.035;fxInit();
+      for(let i=0;i<2;i++)spark(player.x-K.sd.x*(.1+Math.random()*.5)+(Math.random()-.5)*.4,avatar.position.y-K.jy+.06,player.z-K.sd.z*(.1+Math.random()*.5)+(Math.random()-.5)*.4,(Math.random()-.5)*.6,.3+Math.random()*.4,(Math.random()-.5)*.6,.45,.12+Math.random()*.1,0xd8cdb4,-.4)}}
+  }
   let tickBusy=false;
   function tick(){
     if(tickBusy)return;tickBusy=true;
@@ -605,8 +636,9 @@ window.VisitKit=(function(){
       const tp=!!(avatar&&avatar.visible);
       const moving=typeof keys!=='undefined'&&(keys.KeyW||keys.KeyA||keys.KeyS||keys.KeyD||keys.ArrowUp||keys.ArrowDown||keys.ArrowLeft||keys.ArrowRight);
       camera.position.y+=K.jy-(tp?0:.6*sk);
-      if(tp){avatar.position.y+=K.jy-.35*sk;if(K.model)K.model.g.rotation.x=-.9*sk;tpUpdate(dt)}
-      else if(K.model)K.model.g.rotation.x=0;
+      K.slK+=((K.slideT>0?1:0)-K.slK)*Math.min(1,dt*18);
+      if(tp){avatar.position.y+=K.jy;tpUpdate(dt);rollTP(dt)}
+      else if(K.model){K.model.g.rotation.set(0,0,0);K.model.g.position.set(0,0,0);K.model.g.scale.y=1}
       const scoped=K.aim>.6&&K.cur==='sniper'&&!tp;
       if(vm)fpUpdate(dt,!!moving&&K.jy<=0,!tp&&!busy&&!scoped);
       if(scopeEl)scopeEl.style.display=scoped?'block':'none';
