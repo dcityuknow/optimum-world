@@ -32,7 +32,7 @@ window.VisitKit=(function(){
   const SH_R=V3(.336,1.344,0),SH_L=V3(-.336,1.344,0),DOWN=V3(0,-1,0),ZAX=V3(0,0,1);
   const _a=V3(0,0,0),_b=V3(0,0,0),_c=V3(0,0,0);
   const K={cur:'pistol',drawT:.35,relT:0,relMax:1.5,relFor:'pistol',ammo:{pistol:12,rifle:30,sniper:5},cd:0,gcd:0,fireHeld:false,kick:0,flashT:0,hold:-1,throwT:0,throwP:12,shake:0,aim:0,aimOn:false,jy:0,vy:0,slideT:0,slideCd:0,slK:0,sd:{x:0,z:0},t0:performance.now(),bob:0,mx:0,my:0,sx:0,sy:0,toastT:0,model:null,charKey:'vn',hooked:false};
-  let held={},slung={},vm=null,hudEl=null,hudSlots=[],hudAmmo=null,toastEl=null,scopeEl=null;
+  let held={},slung={},vm=null,hudEl=null,fpsEl=null,hudWn=null,hudAa=null,hudAmmo=null,toastEl=null,scopeEl=null;
 
   function gunMesh(t,mat){
     const v=new VB();GUN[t].parts.forEach(p=>v.box(p[0],p[1],p[2],p[3],p[4],p[5],p[6],p[7],true));
@@ -42,27 +42,37 @@ window.VisitKit=(function(){
   function ui(){
     if(hudEl)return;
     const st=document.createElement('style');
-    st.textContent='#vkHud{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60;display:flex;flex-direction:column;align-items:center;gap:6px;pointer-events:none;font:600 13px system-ui,sans-serif;color:#fff}'+
-      '#vkHud .row{display:flex;gap:6px}#vkHud .s{padding:6px 10px;border-radius:10px;background:rgba(20,20,30,.6);opacity:.65}#vkHud .s.on{background:rgba(124,77,255,.9);opacity:1}'+
-      '#vkHud .am{padding:3px 12px;border-radius:999px;background:rgba(20,20,30,.6);font-size:14px}'+
+    st.textContent='#vkHud{position:fixed;inset:0;z-index:60;pointer-events:none;color:#2b2a3a;font:bold 18px "Trebuchet MS",Verdana,sans-serif}'+   // giao diện y hệt game gốc (assets/css/style.css)
+      '#vkHud .pill{position:absolute;background:rgba(255,255,255,.92);border-radius:14px;padding:8px 14px;font-size:18px;white-space:nowrap}'+
+      '#vkHud .stats{position:absolute;left:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));display:flex;gap:12px;align-items:center}'+
+      '#vkHud .stats .pill{position:static}'+
+      '#vkHud .hpw{width:160px;height:14px;background:#fff;border-radius:8px;overflow:hidden;border:2px solid #2b2a3a;box-sizing:content-box}#vkHud .hp{height:100%;width:100%;background:#ff7fa8}'+
+      '#vkHud .am{right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px))}#vkHud .gr{right:16px;bottom:calc(64px + env(safe-area-inset-bottom,0px))}'+
+      '#vkHud .fps{left:16px;bottom:calc(64px + env(safe-area-inset-bottom,0px));background:rgba(20,20,30,.62);font-size:15px;padding:4px 10px;min-width:74px;text-align:center;box-sizing:content-box}'+
       '#vkToast{position:fixed;left:50%;top:18%;transform:translateX(-50%);z-index:99997;padding:8px 16px;border-radius:999px;background:rgba(20,20,30,.8);color:#fff;font:600 14px system-ui,sans-serif;pointer-events:none;opacity:0;transition:opacity .25s}'+
       '#vkScope{position:fixed;inset:0;z-index:50;pointer-events:none;display:none;background:radial-gradient(circle at 50% 50%,transparent 0,transparent 24vmin,#000 24.6vmin)}'+
       '#vkScope::before,#vkScope::after{content:"";position:absolute;background:#000}#vkScope::before{left:0;right:0;top:calc(50% - 1px);height:2px}#vkScope::after{top:0;bottom:0;left:calc(50% - 1px);width:2px}';
     document.head.appendChild(st);
     hudEl=document.createElement('div');hudEl.id='vkHud';
-    const row=document.createElement('div');row.className='row';
-    ORDER.forEach((t,i)=>{const d=document.createElement('div');d.className='s';d.textContent=(i+1)+' '+NAME[t];row.appendChild(d);hudSlots.push(d)});
-    hudAmmo=document.createElement('div');hudAmmo.className='am';
-    hudEl.append(row,hudAmmo);document.body.appendChild(hudEl);
+    hudEl.innerHTML='<div class="pill fps">FPS --</div><div class="stats"><div class="pill">Máu</div><div class="hpw"><div class="hp"></div></div></div><div class="pill gr">💣 <span class="gn">∞</span> · <span class="gk">phím 4</span></div><div class="pill am"><span class="wn"></span> · <span class="aa"></span></div>';
+    hudAmmo=hudEl.querySelector('.am');fpsEl=hudEl.querySelector('.fps');hudWn=hudEl.querySelector('.wn');hudAa=hudEl.querySelector('.aa');
+    document.body.appendChild(hudEl);
     toastEl=document.createElement('div');toastEl.id='vkToast';document.body.appendChild(toastEl);
     scopeEl=document.createElement('div');scopeEl.id='vkScope';document.body.appendChild(scopeEl);
     hud();
   }
   function hud(){
     if(!hudEl)return;
-    ORDER.forEach((t,i)=>hudSlots[i].className='s'+(t===K.cur?' on':''));
     const t=K.cur;
-    hudAmmo.textContent=K.relT>0?'⟳ Đang nạp đạn…':(t==='grenade'?'💣 ∞':K.ammo[t]+' / ∞');
+    hudWn.textContent=NAME[t];
+    hudAa.textContent=K.relT>0?'⟳ nạp đạn…':(t==='grenade'?'∞':K.ammo[t]+' / ∞');
+  }
+  // đồng hồ FPS (như game gốc): xanh >= 50, vàng >= 30, đỏ thấp hơn; cập nhật mỗi 0,5 giây
+  let fpsN=0,fpsLast=performance.now();
+  function fpsTick(now){
+    if(!fpsEl)return;fpsN++;const el=(now-fpsLast)/1000;if(el<.5)return;
+    const f=fpsN/el;fpsN=0;fpsLast=now;
+    fpsEl.textContent='FPS '+Math.round(f);fpsEl.style.color=f>=50?'#3dff7a':f>=30?'#ffd23f':'#ff4d5e';
   }
   function toast(msg){
     if(!toastEl)return;toastEl.textContent=msg;toastEl.style.opacity='1';K.toastT=1.6;
@@ -695,7 +705,7 @@ function botLogoGrid(nx,ny){
   function tick(){
     if(tickBusy)return;tickBusy=true;
     try{
-      const now=performance.now(),dt=Math.min(.05,Math.max(0,(now-K.t0)/1000));K.t0=now;
+      const now=performance.now(),dt=Math.min(.05,Math.max(0,(now-K.t0)/1000));K.t0=now;fpsTick(now);
       const busy=(typeof panelOpen!=='undefined'&&panelOpen)||(typeof DLG!=='undefined'&&DLG)||(typeof photoMode!=='undefined'&&photoMode);
       if(K.drawT>0)K.drawT=Math.max(0,K.drawT-dt);
       if(K.relT>0){K.relT=Math.max(0,K.relT-dt);if(K.relT===0){if(FIRE[K.relFor])K.ammo[K.relFor]=FIRE[K.relFor].mag;hud()}}
